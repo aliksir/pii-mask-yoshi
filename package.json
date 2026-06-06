@@ -1,0 +1,17 @@
+{
+  "name": "pii-mask-yoshi",
+  "version": "0.1.0",
+  "description": "Claude Code用PIIマスキングMCPサーバー。機密資料を安全にAI処理するため、送信前にPIIをマスクし、結果をローカルで復元する。",
+  "type": "module",
+  "bin": {
+    "pii-mask-yoshi": "index.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT",
+  "dependencies": {}
+}
