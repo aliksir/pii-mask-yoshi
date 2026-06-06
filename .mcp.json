@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "pii-mask-yoshi": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/index.mjs"]
+    }
+  }
+}

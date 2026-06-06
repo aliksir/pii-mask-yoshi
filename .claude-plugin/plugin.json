@@ -1,0 +1,13 @@
+{
+  "name": "pii-mask-yoshi",
+  "version": "0.3.0",
+  "description": "Automatically masks PII (personally identifiable information) in files before they reach Anthropic's API. Provides safe_read as a drop-in replacement for Read, with a PreToolUse hook that blocks unmasked reads of sensitive files.",
+  "author": {
+    "name": "aliksir",
+    "url": "https://github.com/aliksir"
+  },
+  "homepage": "https://github.com/aliksir/pii-mask-yoshi#readme",
+  "repository": "https://github.com/aliksir/pii-mask-yoshi",
+  "license": "Apache-2.0",
+  "keywords": ["claude", "claude-code", "pii", "privacy", "masking", "security", "mcp"]
+}

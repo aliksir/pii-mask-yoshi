@@ -1,7 +1,8 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-const NEKO_NOT_YOSHI_DIR = join(process.env.NEKO_NOT_YOSHI_DIR || 'C:/work/neko-not-yoshi');
+import { homedir } from 'node:os';
+const NEKO_NOT_YOSHI_DIR = process.env.NEKO_NOT_YOSHI_DIR || join(homedir(), 'neko-not-yoshi');
 
 const BUILTIN_PATTERNS = [
   { id: 'email', category: 'pii', regex: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}', maskPrefix: 'EMAIL' },
