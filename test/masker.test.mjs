@@ -150,7 +150,7 @@ describe('maskText', () => {
   });
 
   it('should mask CJK Extension A characters in names', () => {
-    const result = maskText('担当: 木村 太郎');
+    const result = maskText('担当: 木村 次郎');
     assert.ok(result.includes('[PERSON-'), `got: ${result}`);
   });
 });

@@ -3,6 +3,14 @@ import { join } from 'node:path';
 
 const NEKO_NOT_YOSHI_DIR = join(process.env.NEKO_NOT_YOSHI_DIR || 'C:/work/neko-not-yoshi');
 
+const BUILTIN_PATTERNS = [
+  { id: 'email', category: 'pii', regex: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}', maskPrefix: 'EMAIL' },
+  { id: 'phone-jp', category: 'pii', regex: '0\\d{1,4}-\\d{1,4}-\\d{4}', maskPrefix: 'TEL' },
+  { id: 'ipv4', category: 'network', regex: '(?:\\d{1,3}\\.){3}\\d{1,3}', maskPrefix: 'IPv4' },
+  { id: 'ipv6', category: 'network', regex: '(?:[A-Fa-f0-9]{1,4}:){2,7}[A-Fa-f0-9]{1,4}', maskPrefix: 'IPv6' },
+  { id: 'local-path-home', category: 'pii', regex: "[A-Za-z]:[\\\\/]Users[\\\\/][^\\s\"'`,)]+", maskPrefix: 'PATH' },
+];
+
 const EXTRA_PATTERNS = [
   { id: 'jwt-token', category: 'credential', regex: 'eyJ[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}\\.?[A-Za-z0-9_-]*', maskPrefix: 'JWT' },
   { id: 'api-key-openai', category: 'credential', regex: 'sk-[a-zA-Z0-9]{20,}', maskPrefix: 'APIKEY' },
@@ -76,6 +84,20 @@ function luhnCheck(num) {
   return sum % 10 === 0;
 }
 
+function compileBasePattern(p) {
+  return {
+    id: p.id,
+    category: p.category,
+    regex: new RegExp(p.regex, 'g'),
+    maskPrefix: CATEGORY_TO_PREFIX[p.id] || p.maskPrefix || p.category.toUpperCase(),
+    validator: p.id === 'ipv4' ? (m) => {
+      const cls = classifyIPv4(m);
+      if (cls === 'invalid') return null;
+      return cls === 'private' ? 'PRIV-IPv4' : 'IPv4';
+    } : p.id === 'ipv6' ? (m) => looksLikeIPv6(m) ? 'IPv6' : null : null,
+  };
+}
+
 export function loadPatterns() {
   const compiled = [];
 
@@ -83,20 +105,11 @@ export function loadPatterns() {
   if (existsSync(pubPath)) {
     const pub = JSON.parse(readFileSync(pubPath, 'utf8'));
     for (const p of pub.patterns || []) {
-      // neko-not-yoshi の全パターンをマスク対象に含める（SSOT流用原則）
-      try {
-        compiled.push({
-          id: p.id,
-          category: p.category,
-          regex: new RegExp(p.regex, 'g'),
-          maskPrefix: CATEGORY_TO_PREFIX[p.id] || p.category.toUpperCase(),
-          validator: p.id === 'ipv4' ? (m) => {
-            const cls = classifyIPv4(m);
-            if (cls === 'invalid') return null;
-            return cls === 'private' ? 'PRIV-IPv4' : 'IPv4';
-          } : p.id === 'ipv6' ? (m) => looksLikeIPv6(m) ? 'IPv6' : null : null,
-        });
-      } catch { /* skip invalid regex */ }
+      try { compiled.push(compileBasePattern(p)); } catch { /* skip */ }
+    }
+  } else {
+    for (const p of BUILTIN_PATTERNS) {
+      try { compiled.push(compileBasePattern(p)); } catch { /* skip */ }
     }
   }
 
