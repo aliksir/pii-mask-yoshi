@@ -21,6 +21,8 @@ const EXTRA_PATTERNS = [
   { id: 'passport-jp', category: 'pii', regex: '\\b[A-Z]{2}\\d{7}\\b', maskPrefix: 'PASSPORT' },
   { id: 'corporate-number', category: 'pii', regex: '(?:法人番号\\s*[:：]?\\s*|T)\\d{13}', maskPrefix: 'CORPNUM' },
   { id: 'jp-address', category: 'pii', regex: '(?:東京都|北海道|(?:大阪|京都)府|.{2,3}県)(?:[\\u4E00-\\u9FFF\\u3040-\\u309F\\u30A0-\\u30FF0-9０-９]{1,4}[\\u5E02\\u533A\\u753A\\u6751\\u90E1])[\\u4E00-\\u9FFF\\u3040-\\u309F\\u30A0-\\u30FF0-9０-９\\-]{1,20}', maskPrefix: 'ADDR' },
+  { id: 'jp-person-name', category: 'pii', regex: '[\\u3400-\\u9FFF]{2,4}[\\s\\u3000]+[\\u3400-\\u9FFF]{1,4}', maskPrefix: 'PERSON' },
+  { id: 'jp-person-name-list', category: 'pii', regex: '[\\u3400-\\u9FFF]{1,4}(?:[、,][\\u3400-\\u9FFF]{1,4}){2,}', maskPrefix: 'PERSON' },
 ];
 
 const CATEGORY_TO_PREFIX = {
@@ -49,6 +51,15 @@ function looksLikeIPv6(s) {
   const g = s.split(':');
   if (g.length < 6) return false;
   return g.some((x) => x.length >= 3 || /[a-fA-F]/.test(x));
+}
+
+const GEO_SUFFIXES = /[都道府県市区町村郡]$/;
+
+function validateJpName(matched) {
+  const parts = matched.trim().split(/[\s　]+/);
+  if (parts.length !== 2) return null;
+  if (GEO_SUFFIXES.test(parts[0]) && GEO_SUFFIXES.test(parts[1])) return null;
+  return 'PERSON';
 }
 
 function luhnCheck(num) {
@@ -114,7 +125,8 @@ export function loadPatterns() {
         category: p.category,
         regex: new RegExp(p.regex, 'g'),
         maskPrefix: p.maskPrefix,
-        validator: p.id === 'credit-card' ? (m) => luhnCheck(m) ? 'CARD' : null : null,
+        validator: p.id === 'credit-card' ? (m) => luhnCheck(m) ? 'CARD' : null
+          : p.id === 'jp-person-name' ? (m) => validateJpName(m) : null,
       });
     } catch { /* skip */ }
   }

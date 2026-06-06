@@ -4,6 +4,7 @@ import { createInterface } from 'node:readline';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname, extname, basename, join } from 'node:path';
 import { maskText, unmaskText, getStore } from './src/masker.mjs';
+import { BINARY_EXTENSIONS, convertWithMarkitdown } from './src/converter.mjs';
 
 const TOOLS = [
   {
@@ -39,15 +40,26 @@ const TOOLS = [
 function handleToolCall(name, args) {
   if (name === 'safe_read') {
     const filePath = resolve(args.path);
+    const ext = extname(filePath).toLowerCase();
     let content;
-    try {
-      content = readFileSync(filePath, 'utf8');
-    } catch (e) {
-      return { isError: true, content: [{ type: 'text', text: `ファイル読み取りエラー: ${e.message}` }] };
+
+    if (BINARY_EXTENSIONS.has(ext)) {
+      content = convertWithMarkitdown(filePath);
+      if (!content) {
+        return { isError: true, content: [{ type: 'text', text: `バイナリファイル変換エラー: markitdown でファイルを変換できません（python -m markitdown が必要です）` }] };
+      }
+    } else {
+      try {
+        content = readFileSync(filePath, 'utf8');
+      } catch (e) {
+        return { isError: true, content: [{ type: 'text', text: `ファイル読み取りエラー: ${e.message}` }] };
+      }
     }
+
     const masked = maskText(content);
     const stats = getStore().stats();
-    const header = `[pii-mask-yoshi] ${stats.totalMasked}箇所マスク済み (対応表: ${stats.mapFile})\n---\n`;
+    const formatLabel = BINARY_EXTENSIONS.has(ext) ? ` [${ext} → markitdown変換]` : '';
+    const header = `[pii-mask-yoshi] ${stats.totalMasked}箇所マスク済み${formatLabel} (対応表: ${stats.mapFile})\n---\n`;
     return { content: [{ type: 'text', text: header + masked }] };
   }
 
@@ -106,7 +118,7 @@ function handleMessage(msg) {
       result: {
         protocolVersion: '2024-11-05',
         capabilities: { tools: {} },
-        serverInfo: { name: 'pii-mask-yoshi', version: '0.1.0' },
+        serverInfo: { name: 'pii-mask-yoshi', version: '0.3.0' },
       },
     };
   }

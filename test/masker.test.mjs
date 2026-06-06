@@ -125,6 +125,34 @@ describe('maskText', () => {
     assert.ok(result.includes('[CORPNUM-001]'), `got: ${result}`);
     assert.ok(!result.includes('1234567890123'));
   });
+
+  it('should mask Japanese person names (surname + space + given name)', () => {
+    const result = maskText('管理者: 山田 花子');
+    assert.ok(result.includes('[PERSON-'), `got: ${result}`);
+    assert.ok(!result.includes('山田 花子'));
+  });
+
+  it('should mask Japanese person names with full-width space', () => {
+    const result = maskText('担当: 佐藤　健太');
+    assert.ok(result.includes('[PERSON-'), `got: ${result}`);
+    assert.ok(!result.includes('佐藤'));
+  });
+
+  it('should not mask geographic pairs as person names', () => {
+    const result = maskText('東京都 渋谷区');
+    assert.ok(!result.includes('[PERSON-'), `should not mask geo pair: ${result}`);
+  });
+
+  it('should mask comma-separated name lists', () => {
+    const result = maskText('共同編集者: 鈴木、田中、高橋、渡辺');
+    assert.ok(result.includes('[PERSON-'), `got: ${result}`);
+    assert.ok(!result.includes('鈴木'));
+  });
+
+  it('should mask CJK Extension A characters in names', () => {
+    const result = maskText('担当: 木村 太郎');
+    assert.ok(result.includes('[PERSON-'), `got: ${result}`);
+  });
 });
 
 describe('unmaskText', () => {
