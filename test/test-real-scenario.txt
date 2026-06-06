@@ -1,0 +1,46 @@
+件名: CloudStore社 クラウドストレージ統合プロジェクト 議事録
+日時: 2026-06-05 14:00-15:30
+場所: 株式会社サンプルテック 本社 会議室A
+
+出席者:
+  - 佐藤健一 (プロジェクトマネージャー) satoh.kenichi@sample-tech.co.jp
+  - 鈴木美咲 (インフラエンジニア) m.suzuki@sample-tech.co.jp
+  - 田中誠 (CloudStore担当SE) makoto.tanaka@cloudstore-partner.com
+  - Robert Johnson (CloudStore本社) r.johnson@cloudstore.com
+
+連絡先:
+  佐藤: 090-8765-4321
+  鈴木: 080-1111-2222
+  田中: 03-5555-9999
+
+議事内容:
+
+1. 現行環境の確認
+   - 本番サーバー: 10.200.30.50 (nas-prod-01)
+   - 検証サーバー: 10.200.30.51 (nas-stg-01)
+   - バックアップ: 172.16.0.100
+   - 外部公開: 203.0.113.200
+   - DNS: ns1.sample-tech.co.jp (133.242.10.5)
+
+2. 認証情報（移行作業用）
+   - 管理者: admin / P@ssw0rd2026!
+   - API連携: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV
+   - AWS AccessKey: AKIAIOSFODNN7EXAMPLE
+   - Secret: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+   - Azure接続文字列: DefaultEndpointsProtocol=https;AccountName=technosol;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;
+
+3. 請求関連
+   - 見積番号: Q-2026-0042
+   - 佐藤様の社員番号: EMP-20150423
+   - 請求先住所: 東京都港区六本木3-16-26 テクノビル8F
+   - 法人番号: 1234567890123
+   - 口座: 三菱UFJ銀行 渋谷支店 普通 1234567
+   - クレジットカード(検証環境課金用): 4111-1111-1111-1111 有効期限 12/28
+
+4. 個人情報取扱い
+   - 対象ユーザーCSV: 約5000件
+   - マイナンバー連携テストデータ: 123456789012
+   - パスポート番号(田中): TK1234567
+
+次回: 2026-06-12 10:00 同会議室
+議事録作成: 鈴木美咲

@@ -83,6 +83,48 @@ describe('maskText', () => {
     const result = maskText('file at C:\\Users\\tanaka\\Documents\\secret.txt');
     assert.ok(result.includes('[PATH-001]'), `got: ${result}`);
   });
+
+  it('should mask JWT tokens', () => {
+    const result = maskText('Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature');
+    assert.ok(result.includes('[JWT-001]'), `got: ${result}`);
+    assert.ok(!result.includes('eyJhbGci'));
+  });
+
+  it('should mask AWS Secret Access Keys', () => {
+    const result = maskText('Secret: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY');
+    assert.ok(result.includes('[SECRET-001]'), `got: ${result}`);
+    assert.ok(!result.includes('wJalrXUtnFEMI'));
+  });
+
+  it('should mask Azure AccountKey in connection strings', () => {
+    const result = maskText('DefaultEndpointsProtocol=https;AccountKey=abc123def456ghi789jkl012mno345==;');
+    assert.ok(result.includes('[SECRET-'), `got: ${result}`);
+    assert.ok(!result.includes('abc123def456'));
+  });
+
+  it('should mask password with slash separator', () => {
+    const result = maskText('管理者: admin / P@ssw0rd2026!');
+    assert.ok(result.includes('[PASSWD-'), `got: ${result}`);
+    assert.ok(!result.includes('P@ssw0rd2026!'));
+  });
+
+  it('should mask bank account with type prefix', () => {
+    const result = maskText('三菱UFJ銀行 渋谷支店 普通 1234567');
+    assert.ok(result.includes('[BANK-'), `got: ${result}`);
+    assert.ok(!result.includes('1234567'));
+  });
+
+  it('should mask Japanese passport numbers', () => {
+    const result = maskText('パスポート番号: TK1234567');
+    assert.ok(result.includes('[PASSPORT-001]'), `got: ${result}`);
+    assert.ok(!result.includes('TK1234567'));
+  });
+
+  it('should mask corporate numbers', () => {
+    const result = maskText('法人番号: 1234567890123');
+    assert.ok(result.includes('[CORPNUM-001]'), `got: ${result}`);
+    assert.ok(!result.includes('1234567890123'));
+  });
 });
 
 describe('unmaskText', () => {

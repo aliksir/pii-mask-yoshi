@@ -4,15 +4,22 @@ import { join } from 'node:path';
 const NEKO_NOT_YOSHI_DIR = join(process.env.NEKO_NOT_YOSHI_DIR || 'C:/work/neko-not-yoshi');
 
 const EXTRA_PATTERNS = [
+  { id: 'jwt-token', category: 'credential', regex: 'eyJ[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}\\.?[A-Za-z0-9_-]*', maskPrefix: 'JWT' },
   { id: 'api-key-openai', category: 'credential', regex: 'sk-[a-zA-Z0-9]{20,}', maskPrefix: 'APIKEY' },
   { id: 'api-key-github', category: 'credential', regex: 'ghp_[a-zA-Z0-9]{36,}', maskPrefix: 'APIKEY' },
   { id: 'api-key-aws', category: 'credential', regex: 'AKIA[A-Z0-9]{16}', maskPrefix: 'APIKEY' },
   { id: 'api-key-anthropic', category: 'credential', regex: 'sk-ant-[a-zA-Z0-9-]{20,}', maskPrefix: 'APIKEY' },
+  { id: 'aws-secret-key', category: 'credential', regex: '(?:(?:aws)?_?secret_?(?:access)?_?key|SecretAccessKey|Secret)\\s*[:=]\\s*[A-Za-z0-9/+=]{40}', maskPrefix: 'SECRET' },
+  { id: 'azure-account-key', category: 'credential', regex: 'AccountKey=[A-Za-z0-9/+=]{20,}', maskPrefix: 'SECRET' },
+  { id: 'password-kv-slash', category: 'credential', regex: '(?:管理者|admin\\b|root\\b|user\\b)\\s*/\\s*\\S+', maskPrefix: 'PASSWD' },
   { id: 'password-kv-en', category: 'credential', regex: '(?:password|passwd|secret|token)\\s*[:=]\\s*\\S+', maskPrefix: 'PASSWD' },
   { id: 'password-kv-ja', category: 'credential', regex: '(?:パスワード|パス|密码|秘密鍵)\\s*[:=：]\\s*\\S+', maskPrefix: 'PASSWD' },
   { id: 'credit-card', category: 'financial', regex: '\\b(?:\\d{4}[-\\s]?){3}\\d{4}\\b', maskPrefix: 'CARD' },
   { id: 'my-number', category: 'pii', regex: '\\b\\d{4}\\s?\\d{4}\\s?\\d{4}\\b', maskPrefix: 'MYNUM' },
   { id: 'bank-account', category: 'financial', regex: '(?:口座番号|口座)\\s*[:=：]?\\s*\\d{7,8}', maskPrefix: 'BANK' },
+  { id: 'bank-account-type', category: 'financial', regex: '(?:普通|当座)\\s*\\d{7,8}', maskPrefix: 'BANK' },
+  { id: 'passport-jp', category: 'pii', regex: '\\b[A-Z]{2}\\d{7}\\b', maskPrefix: 'PASSPORT' },
+  { id: 'corporate-number', category: 'pii', regex: '(?:法人番号\\s*[:：]?\\s*|T)\\d{13}', maskPrefix: 'CORPNUM' },
   { id: 'jp-address', category: 'pii', regex: '(?:東京都|北海道|(?:大阪|京都)府|.{2,3}県)(?:[\\u4E00-\\u9FFF\\u3040-\\u309F\\u30A0-\\u30FF0-9０-９]{1,4}[\\u5E02\\u533A\\u753A\\u6751\\u90E1])[\\u4E00-\\u9FFF\\u3040-\\u309F\\u30A0-\\u30FF0-9０-９\\-]{1,20}', maskPrefix: 'ADDR' },
 ];
 
