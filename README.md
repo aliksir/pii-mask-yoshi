@@ -66,6 +66,37 @@ A standalone MCP server for document conversion. While pii-mask-yoshi calls `pyt
 - **Install**: `npm install -g markitdown-yoshi`
 - **Repo**: [aliksir/markitdown-yoshi](https://github.com/aliksir/markitdown-yoshi)
 
+### Conversion Flow: Who Does What
+
+```
+              Document files (xlsx, docx, pdf, ...)
+                          |
+          +---------------+---------------+
+          |                               |
+    pii-mask-yoshi                  markitdown-yoshi
+    (safe_read tool)               (convert tool)
+          |                               |
+    python -m markitdown            python -m markitdown
+    (internal call)                 (internal call)
+          |                               |
+    PII masking applied             Raw Markdown returned
+          |                               |
+    Masked text -> API              Markdown -> API
+          |
+    Token map saved locally
+    (~/.pii-mask-yoshi/maps/)
+```
+
+| Aspect | pii-mask-yoshi | markitdown-yoshi |
+|--------|---------------|-----------------|
+| Purpose | Read files with PII masking | Convert documents to Markdown |
+| PII handling | Auto-masked before API | No masking (raw content) |
+| Binary conversion | Built-in via `python -m markitdown` | Built-in via `python -m markitdown` |
+| Access control | No directory restriction | Allowed roots enforcement |
+| Size limits | None (inherits file system) | 10MB input, 500KB output |
+| Caching | Token map per session | No caching |
+| When to use | Reading sensitive documents | Converting documents for general use |
+
 ## How It Works
 
 ```
