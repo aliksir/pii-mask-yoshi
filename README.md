@@ -101,10 +101,15 @@ Local report (contains actual values):
 - **Session ID format**: `session-{timestamp}` — a unique ID generated per MCP server instance (i.e., per Claude Code session). The timestamp is `Date.now()` at server startup.
 - **Retention**: Reports are not auto-deleted. Periodically clean old reports:
   ```bash
-  # Delete reports older than 30 days
+  # Delete reports older than 30 days (Linux/macOS)
   find ~/.pii-mask-yoshi -name 'block-report-*' -mtime +30 -delete
   ```
-- **Security note**: Detail reports contain actual PII values. Ensure `~/.pii-mask-yoshi/` has appropriate permissions (e.g., `chmod 700`).
+  ```powershell
+  # Delete reports older than 30 days (Windows PowerShell)
+  Get-ChildItem "$env:USERPROFILE\.pii-mask-yoshi" -Filter "block-report-*" |
+    Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-30) } | Remove-Item
+  ```
+- **Security note**: Detail reports contain actual PII values. Ensure `~/.pii-mask-yoshi/` has appropriate permissions (e.g., `chmod 700` on Linux/macOS, or restrict ACL on Windows).
 - **Token mapping files**: `~/.pii-mask-yoshi/maps/session-*.json` — same retention policy applies. Required for `unmask_file` to work.
 
 ### SIEM Integration
@@ -129,6 +134,23 @@ Custom metadata can be attached to every event via the `meta` parameter:
 Severity levels are assigned per PII category: `critical` (API keys, passwords), `high` (email, person names, credit cards), `medium` (phone, address), `low` (IP, file paths).
 
 **PII values are never included in SIEM output** — only category, token, file path, and line number.
+
+#### Output Examples
+
+**JSONL** (one event per line):
+```json
+{"timestamp":"2026-06-07T10:00:00.000Z","event_type":"pii_detection","session_id":"session-1749290400000","host":"workstation-1","file":"/projects/report.txt","line":3,"category":"EMAIL","token":"[EMAIL-001]","severity":"high","org":"acme-corp"}
+```
+
+**CEF**:
+```
+CEF:0|aliksir|pii-mask-yoshi|0.3.0|pii_detection|PII Detected|7|src=/projects/report.txt spt=3 cs1=EMAIL cs1Label=Category cs2=[EMAIL-001] cs2Label=Token dvchost=workstation-1 externalId=session-1749290400000 org=acme-corp
+```
+
+**ECS** (Elastic Common Schema):
+```json
+{"@timestamp":"2026-06-07T10:00:00.000Z","event":{"kind":"alert","category":["intrusion_detection"],"type":["info"],"module":"pii-mask-yoshi","dataset":"pii.detection","severity":7},"file":{"path":"/projects/report.txt"},"source":{"line":3},"rule":{"category":"EMAIL"},"message":"[EMAIL-001]","agent":{"name":"pii-mask-yoshi","version":"0.3.0"},"host":{"name":"workstation-1"},"labels":{"session_id":"session-1749290400000","org":"acme-corp"}}
+```
 
 ### neko-hq Integration
 

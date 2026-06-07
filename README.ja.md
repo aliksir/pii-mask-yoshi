@@ -74,10 +74,15 @@ API応答に含まれる情報:
 - **セッションID形式**: `session-{タイムスタンプ}` — MCPサーバーインスタンスごと（= Claude Codeセッションごと）に生成される一意のID。タイムスタンプはサーバー起動時の `Date.now()`。
 - **保持期間**: レポートは自動削除されません。定期的に古いレポートを削除してください:
   ```bash
-  # 30日以上前のレポートを削除
+  # 30日以上前のレポートを削除（Linux/macOS）
   find ~/.pii-mask-yoshi -name 'block-report-*' -mtime +30 -delete
   ```
-- **セキュリティ注意**: 詳細レポートには実際のPII値が含まれます。`~/.pii-mask-yoshi/` に適切な権限を設定してください（例: `chmod 700`）。
+  ```powershell
+  # 30日以上前のレポートを削除（Windows PowerShell）
+  Get-ChildItem "$env:USERPROFILE\.pii-mask-yoshi" -Filter "block-report-*" |
+    Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-30) } | Remove-Item
+  ```
+- **セキュリティ注意**: 詳細レポートには実際のPII値が含まれます。`~/.pii-mask-yoshi/` に適切な権限を設定してください（例: Linux/macOS では `chmod 700`、Windows では ACL で制限）。
 - **トークン対応表**: `~/.pii-mask-yoshi/maps/session-*.json` — 同じ保持ポリシーが適用されます。`unmask_file` の動作に必要です。
 
 ### SIEM 連携
@@ -102,6 +107,23 @@ SIEM形式（`jsonl`, `cef`, `ecs`）は `~/.pii-mask-yoshi/siem/{session}.{form
 重要度はPIIカテゴリ別に自動付与: `critical`（APIキー、パスワード）、`high`（メール、人名、クレジットカード）、`medium`（電話番号、住所）、`low`（IP、ファイルパス）。
 
 **SIEM出力にPII実値は一切含まれません** — カテゴリ、トークン、ファイルパス、行番号のみ。
+
+#### 出力例
+
+**JSONL**（1検出1行）:
+```json
+{"timestamp":"2026-06-07T10:00:00.000Z","event_type":"pii_detection","session_id":"session-1749290400000","host":"workstation-1","file":"/projects/report.txt","line":3,"category":"EMAIL","token":"[EMAIL-001]","severity":"high","org":"acme-corp"}
+```
+
+**CEF**:
+```
+CEF:0|aliksir|pii-mask-yoshi|0.3.0|pii_detection|PII Detected|7|src=/projects/report.txt spt=3 cs1=EMAIL cs1Label=Category cs2=[EMAIL-001] cs2Label=Token dvchost=workstation-1 externalId=session-1749290400000 org=acme-corp
+```
+
+**ECS**（Elastic Common Schema）:
+```json
+{"@timestamp":"2026-06-07T10:00:00.000Z","event":{"kind":"alert","category":["intrusion_detection"],"type":["info"],"module":"pii-mask-yoshi","dataset":"pii.detection","severity":7},"file":{"path":"/projects/report.txt"},"source":{"line":3},"rule":{"category":"EMAIL"},"message":"[EMAIL-001]","agent":{"name":"pii-mask-yoshi","version":"0.3.0"},"host":{"name":"workstation-1"},"labels":{"session_id":"session-1749290400000","org":"acme-corp"}}
+```
 
 ### neko-hq 連携
 

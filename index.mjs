@@ -59,6 +59,7 @@ const TOOLS = [
             org: { type: 'string', description: '組織名' },
             environment: { type: 'string', description: '環境名（prod/staging/dev）' },
           },
+          additionalProperties: false,
         },
       },
     },
@@ -178,7 +179,14 @@ function handleToolCall(name, args) {
       const content = formatters[outputFormat](findings, s.sessionId, meta);
       const siemDir = join(homedir(), '.pii-mask-yoshi', 'siem');
       mkdirSync(siemDir, { recursive: true });
-      const siemPath = args.output_path ? resolve(args.output_path) : join(siemDir, `${s.sessionId}.${outputFormat}`);
+      let siemPath = join(siemDir, `${s.sessionId}.${outputFormat}`);
+      if (args.output_path) {
+        const candidate = resolve(args.output_path);
+        if (!candidate.startsWith(resolve(siemDir))) {
+          return { isError: true, content: [{ type: 'text', text: `output_path は ${siemDir} 配下のみ許可されます` }] };
+        }
+        siemPath = candidate;
+      }
       writeFileSync(siemPath, content, 'utf8');
       return { content: [{ type: 'text', text: `[pii-mask-yoshi] ${outputFormat.toUpperCase()}形式で${findings.length}件出力\nファイル: ${siemPath}\n詳細レポート（実PII値含む）: ${reportPath}` }] };
     }
