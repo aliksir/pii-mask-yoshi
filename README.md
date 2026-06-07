@@ -12,6 +12,7 @@ Claude Code (MCP) server that automatically masks PII (personally identifiable i
 | `safe_read` | Read a file with automatic PII masking. Binary files (xlsx, docx, pptx, pdf, etc.) are auto-converted via markitdown. |
 | `unmask_file` | Restore masked tokens in a file to original values. Output is written to a local file only (never returned to Claude). |
 | `mask_stats` | Show masking statistics for the current session. |
+| `block_report` | PII detection report by category, file, and line number. Supports text/json/jsonl/cef/ecs formats for SIEM integration. Actual PII values are never returned — detail report is local only. |
 
 ## Built-in Detection Patterns
 
