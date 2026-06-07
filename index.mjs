@@ -6,6 +6,7 @@ import { resolve, dirname, extname, basename, join } from 'node:path';
 import { homedir } from 'node:os';
 import { maskText, unmaskText, getStore } from './src/masker.mjs';
 import { BINARY_EXTENSIONS, convertWithMarkitdown } from './src/converter.mjs';
+import { formatSiemJsonl, formatSiemCef, formatSiemEcs } from './src/siem-formats.mjs';
 
 const TOOLS = [
   {
@@ -38,14 +39,26 @@ const TOOLS = [
   },
   {
     name: 'block_report',
-    description: 'セッション中にマスクされたPIIの一覧をカテゴリ・ファイル名・行番号で表示する。実PII値はAPI応答に含めず、ローカルレポートファイルにのみ書き出す。',
+    description: 'セッション中にマスクされたPIIの一覧をカテゴリ・ファイル名・行番号で表示する。実PII値はAPI応答に含めず、ローカルレポートファイルにのみ書き出す。SIEM連携用にjsonl/cef/ecs形式でのファイル出力にも対応。',
     inputSchema: {
       type: 'object',
       properties: {
         format: {
           type: 'string',
-          enum: ['text', 'json'],
-          description: '出力形式。text: 人間可読なテキスト（デフォルト）、json: 機械処理用JSON',
+          enum: ['text', 'json', 'jsonl', 'cef', 'ecs'],
+          description: '出力形式。text: 人間可読（デフォルト）、json: 集約JSON、jsonl: 1検出1行（Splunk/Datadog汎用）、cef: Common Event Format（ArcSight/QRadar）、ecs: Elastic Common Schema',
+        },
+        output_path: {
+          type: 'string',
+          description: 'SIEM形式（jsonl/cef/ecs）の出力先ファイルパス。省略時: ~/.pii-mask-yoshi/siem/{session}.{format}',
+        },
+        meta: {
+          type: 'object',
+          description: 'SIEMイベントに付与するカスタムメタデータ（例: {"org":"acme","environment":"prod"}）',
+          properties: {
+            org: { type: 'string', description: '組織名' },
+            environment: { type: 'string', description: '環境名（prod/staging/dev）' },
+          },
         },
       },
     },
@@ -126,9 +139,15 @@ function handleToolCall(name, args) {
     const findings = s.getFindings();
     const outputFormat = args.format || 'text';
 
+    const siemFormats = ['jsonl', 'cef', 'ecs'];
+    const isSiem = siemFormats.includes(outputFormat);
+
     if (findings.length === 0) {
       if (outputFormat === 'json') {
         return { content: [{ type: 'text', text: JSON.stringify({ session_id: s.sessionId, total: 0, by_file: {}, detail_report: null }) }] };
+      }
+      if (isSiem) {
+        return { content: [{ type: 'text', text: `ブロック検出なし（0件）— ${outputFormat}出力スキップ` }] };
       }
       return { content: [{ type: 'text', text: 'ブロック検出なし（0件）' }] };
     }
@@ -152,6 +171,17 @@ function handleToolCall(name, args) {
     mkdirSync(reportDir, { recursive: true });
     const reportPath = join(reportDir, `block-report-${s.sessionId}.txt`);
     writeFileSync(reportPath, detailLines.join('\n'), 'utf8');
+
+    if (isSiem) {
+      const meta = args.meta || {};
+      const formatters = { jsonl: formatSiemJsonl, cef: formatSiemCef, ecs: formatSiemEcs };
+      const content = formatters[outputFormat](findings, s.sessionId, meta);
+      const siemDir = join(homedir(), '.pii-mask-yoshi', 'siem');
+      mkdirSync(siemDir, { recursive: true });
+      const siemPath = args.output_path ? resolve(args.output_path) : join(siemDir, `${s.sessionId}.${outputFormat}`);
+      writeFileSync(siemPath, content, 'utf8');
+      return { content: [{ type: 'text', text: `[pii-mask-yoshi] ${outputFormat.toUpperCase()}形式で${findings.length}件出力\nファイル: ${siemPath}\n詳細レポート（実PII値含む）: ${reportPath}` }] };
+    }
 
     if (outputFormat === 'json') {
       const byFileJson = {};

@@ -55,10 +55,14 @@ Required for binary file support in `safe_read`.
 - **Without it**: Binary files return an error message. Text files work normally.
 - **Install**: `pip install markitdown[all]`
 
-### markitdown-yoshi (MCP server, separate)
+### markitdown-yoshi (MCP server)
 
-An MCP server wrapper around markitdown. Not a direct dependency of pii-mask-yoshi (pii-mask-yoshi calls `python -m markitdown` directly), but part of the same ecosystem.
+A standalone MCP server for document conversion. While pii-mask-yoshi calls `python -m markitdown` directly for its built-in binary support, markitdown-yoshi provides additional capabilities as a separate MCP tool:
 
+- **What it adds**: `convert` tool for on-demand file conversion, `classify_pdf` for PDF structure analysis, `supported_formats` for format discovery
+- **Use together**: pii-mask-yoshi handles PII masking on read; markitdown-yoshi handles standalone conversion tasks. Both can run as MCP servers simultaneously.
+- **Allowed roots**: markitdown-yoshi enforces directory-scoped access for security (no filesystem root access)
+- **Install**: `npm install -g markitdown-yoshi`
 - **Repo**: [aliksir/markitdown-yoshi](https://github.com/aliksir/markitdown-yoshi)
 
 ## How It Works
@@ -102,6 +106,29 @@ Local report (contains actual values):
   ```
 - **Security note**: Detail reports contain actual PII values. Ensure `~/.pii-mask-yoshi/` has appropriate permissions (e.g., `chmod 700`).
 - **Token mapping files**: `~/.pii-mask-yoshi/maps/session-*.json` — same retention policy applies. Required for `unmask_file` to work.
+
+### SIEM Integration
+
+`block_report` supports multiple output formats for SIEM/log management systems:
+
+| Format | Use case | Output |
+|--------|----------|--------|
+| `text` | Human-readable (default) | MCP response |
+| `json` | Aggregated JSON | MCP response |
+| `jsonl` | One event per line (Splunk, Datadog, generic) | File |
+| `cef` | Common Event Format (ArcSight, QRadar) | File |
+| `ecs` | Elastic Common Schema (Elasticsearch, Kibana) | File |
+
+SIEM formats (`jsonl`, `cef`, `ecs`) write to `~/.pii-mask-yoshi/siem/{session}.{format}` by default. Override with `output_path`.
+
+Custom metadata can be attached to every event via the `meta` parameter:
+```json
+{"format": "jsonl", "meta": {"org": "acme-corp", "environment": "prod"}}
+```
+
+Severity levels are assigned per PII category: `critical` (API keys, passwords), `high` (email, person names, credit cards), `medium` (phone, address), `low` (IP, file paths).
+
+**PII values are never included in SIEM output** — only category, token, file path, and line number.
 
 ### neko-hq Integration
 

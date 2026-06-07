@@ -88,6 +88,83 @@ describe('block_report handler E2E', () => {
   });
 });
 
+describe('SIEM format helpers', () => {
+  beforeEach(() => {
+    getStore().clear();
+  });
+
+  it('JSONL format produces one line per finding with required fields', async () => {
+    maskText('siem@example.com\n192.168.1.1', '/tmp/siem-test.txt');
+    const findings = getStore().getFindings();
+    assert.ok(findings.length >= 2);
+
+    const { formatSiemJsonl } = await import('../src/siem-formats.mjs');
+    const output = formatSiemJsonl(findings, 'session-test', { org: 'acme' });
+    const lines = output.trim().split('\n');
+    assert.equal(lines.length, findings.length);
+
+    for (const line of lines) {
+      const event = JSON.parse(line);
+      assert.ok(event.timestamp);
+      assert.equal(event.event_type, 'pii_detection');
+      assert.equal(event.session_id, 'session-test');
+      assert.ok(event.file);
+      assert.ok(typeof event.line === 'number');
+      assert.ok(event.category);
+      assert.ok(event.token);
+      assert.ok(event.severity);
+      assert.equal(event.org, 'acme');
+      assert.ok(!line.includes('siem@example.com'), 'JSONL must not contain actual PII');
+    }
+  });
+
+  it('CEF format produces valid CEF lines', async () => {
+    maskText('cef-test@example.com', '/tmp/cef-test.txt');
+    const findings = getStore().getFindings();
+
+    const { formatSiemCef } = await import('../src/siem-formats.mjs');
+    const output = formatSiemCef(findings, 'session-cef', {});
+    const lines = output.trim().split('\n');
+
+    for (const line of lines) {
+      assert.ok(line.startsWith('CEF:0|aliksir|pii-mask-yoshi|'), 'should start with CEF header');
+      assert.ok(line.includes('cs1Label=Category'));
+      assert.ok(line.includes('cs2Label=Token'));
+      assert.ok(!line.includes('cef-test@example.com'), 'CEF must not contain actual PII');
+    }
+  });
+
+  it('ECS format produces valid ECS JSON', async () => {
+    maskText('ecs-test@example.com', '/tmp/ecs-test.txt');
+    const findings = getStore().getFindings();
+
+    const { formatSiemEcs } = await import('../src/siem-formats.mjs');
+    const output = formatSiemEcs(findings, 'session-ecs', { org: 'test-org', environment: 'staging' });
+    const lines = output.trim().split('\n');
+
+    for (const line of lines) {
+      const event = JSON.parse(line);
+      assert.ok(event['@timestamp']);
+      assert.equal(event.event.kind, 'alert');
+      assert.equal(event.event.module, 'pii-mask-yoshi');
+      assert.ok(event.file.path);
+      assert.ok(event.agent.name);
+      assert.equal(event.labels.org, 'test-org');
+      assert.equal(event.labels.environment, 'staging');
+      assert.ok(!line.includes('ecs-test@example.com'), 'ECS must not contain actual PII');
+    }
+  });
+
+  it('severity mapping returns expected levels', async () => {
+    const { getSeverity } = await import('../src/siem-formats.mjs');
+    assert.equal(getSeverity('API_KEY'), 'critical');
+    assert.equal(getSeverity('EMAIL'), 'high');
+    assert.equal(getSeverity('PHONE'), 'medium');
+    assert.equal(getSeverity('PATH'), 'low');
+    assert.equal(getSeverity('UNKNOWN_CAT'), 'medium');
+  });
+});
+
 describe('block_report JSON format', () => {
   // Import handleToolCall indirectly via the module's exported handler
   // Since handleToolCall is not exported, we simulate the logic inline
