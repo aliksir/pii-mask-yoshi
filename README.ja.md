@@ -1,4 +1,5 @@
 > English version: [README.md](README.md)
+> [neko-HQ](https://github.com/aliksir/neko-hq) エコシステムの一部です。
 
 # pii-mask-yoshi（日本語ドキュメント）
 

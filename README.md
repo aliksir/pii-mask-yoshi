@@ -1,4 +1,5 @@
 > Japanese version: [README.ja.md](README.ja.md)
+> Part of the [neko-HQ](https://github.com/aliksir/neko-hq) ecosystem.
 
 # pii-mask-yoshi
 
