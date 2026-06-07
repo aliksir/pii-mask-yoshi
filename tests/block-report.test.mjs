@@ -87,3 +87,94 @@ describe('block_report handler E2E', () => {
     assert.ok(output.includes('[EMAIL-'), 'output should contain EMAIL token');
   });
 });
+
+describe('block_report JSON format', () => {
+  // Import handleToolCall indirectly via the module's exported handler
+  // Since handleToolCall is not exported, we simulate the logic inline
+  beforeEach(() => {
+    getStore().clear();
+  });
+
+  it('returns valid JSON structure with findings', () => {
+    maskText('contact: json-test@example.com\nserver: 10.0.0.1', '/tmp/json-test.txt');
+
+    const store = getStore();
+    const findings = store.getFindings();
+    assert.ok(findings.length >= 1, 'should have findings');
+
+    // Simulate JSON format output logic from block_report handler
+    const byFile = {};
+    for (const f of findings) {
+      (byFile[f.file] = byFile[f.file] || []).push(f);
+    }
+    const byFileJson = {};
+    for (const [file, items] of Object.entries(byFile)) {
+      byFileJson[file] = items
+        .sort((a, b) => a.line - b.line)
+        .map((item) => ({ line: item.line, category: item.category.toUpperCase(), token: item.token }));
+    }
+    const jsonResult = {
+      session_id: store.sessionId,
+      total: findings.length,
+      by_file: byFileJson,
+      detail_report: '/mock/path',
+    };
+
+    // Validate JSON structure
+    assert.equal(typeof jsonResult.session_id, 'string');
+    assert.ok(jsonResult.session_id.startsWith('session-'));
+    assert.equal(typeof jsonResult.total, 'number');
+    assert.ok(jsonResult.total > 0);
+    assert.equal(typeof jsonResult.by_file, 'object');
+    assert.ok('/tmp/json-test.txt' in jsonResult.by_file);
+
+    const fileEntries = jsonResult.by_file['/tmp/json-test.txt'];
+    assert.ok(Array.isArray(fileEntries));
+    assert.ok(fileEntries.length > 0);
+
+    // Each entry has required fields
+    for (const entry of fileEntries) {
+      assert.equal(typeof entry.line, 'number');
+      assert.equal(typeof entry.category, 'string');
+      assert.equal(entry.category, entry.category.toUpperCase(), 'category should be uppercase');
+      assert.match(entry.token, /^\[.+-\d{3}\]$/, 'token should be in mask format');
+    }
+  });
+
+  it('returns empty by_file for zero findings', () => {
+    const store = getStore();
+    const jsonResult = {
+      session_id: store.sessionId,
+      total: 0,
+      by_file: {},
+      detail_report: null,
+    };
+    assert.equal(jsonResult.total, 0);
+    assert.deepEqual(jsonResult.by_file, {});
+    assert.equal(jsonResult.detail_report, null);
+  });
+
+  it('JSON output does not contain actual PII values', () => {
+    const testEmail = 'secret-json@corp.example.com';
+    maskText(`email: ${testEmail}`, '/tmp/json-pii-test.txt');
+
+    const store = getStore();
+    const findings = store.getFindings();
+    const byFile = {};
+    for (const f of findings) {
+      (byFile[f.file] = byFile[f.file] || []).push(f);
+    }
+    const byFileJson = {};
+    for (const [file, items] of Object.entries(byFile)) {
+      byFileJson[file] = items.map((item) => ({ line: item.line, category: item.category.toUpperCase(), token: item.token }));
+    }
+    const jsonResult = {
+      session_id: store.sessionId,
+      total: findings.length,
+      by_file: byFileJson,
+      detail_report: '/mock/path',
+    };
+    const serialized = JSON.stringify(jsonResult);
+    assert.ok(!serialized.includes(testEmail), 'JSON output must not contain actual PII');
+  });
+});

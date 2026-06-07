@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createInterface } from 'node:readline';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, appendFileSync } from 'node:fs';
 import { resolve, dirname, extname, basename, join } from 'node:path';
 import { homedir } from 'node:os';
 import { maskText, unmaskText, getStore } from './src/masker.mjs';
@@ -39,7 +39,16 @@ const TOOLS = [
   {
     name: 'block_report',
     description: 'セッション中にマスクされたPIIの一覧をカテゴリ・ファイル名・行番号で表示する。実PII値はAPI応答に含めず、ローカルレポートファイルにのみ書き出す。',
-    inputSchema: { type: 'object', properties: {} },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        format: {
+          type: 'string',
+          enum: ['text', 'json'],
+          description: '出力形式。text: 人間可読なテキスト（デフォルト）、json: 機械処理用JSON',
+        },
+      },
+    },
   },
 ];
 
@@ -115,8 +124,12 @@ function handleToolCall(name, args) {
   if (name === 'block_report') {
     const s = getStore();
     const findings = s.getFindings();
+    const outputFormat = args.format || 'text';
 
     if (findings.length === 0) {
+      if (outputFormat === 'json') {
+        return { content: [{ type: 'text', text: JSON.stringify({ session_id: s.sessionId, total: 0, by_file: {}, detail_report: null }) }] };
+      }
       return { content: [{ type: 'text', text: 'ブロック検出なし（0件）' }] };
     }
 
@@ -125,26 +138,46 @@ function handleToolCall(name, args) {
       (byFile[f.file] = byFile[f.file] || []).push(f);
     }
 
-    const safeLines = [`[pii-mask-yoshi] ブロックレポート`, `検出総数: ${findings.length}件`, ''];
+    // ローカル詳細レポートファイル（両形式共通で書き出す）
     const detailLines = [`=== pii-mask-yoshi block report ===`, `Session: ${s.sessionId}`, `Date: ${new Date().toISOString()}`, ''];
-
     for (const [file, items] of Object.entries(byFile)) {
-      safeLines.push(`${file}: ${items.length}件`);
       detailLines.push(`File: ${file}`);
       for (const item of items.sort((a, b) => a.line - b.line)) {
-        safeLines.push(`  L${item.line}: [${item.category}] ${item.token}`);
         const original = s.tokenToOriginal.get(item.token) || '(unknown)';
         detailLines.push(`  Line ${item.line}: [${item.category}] ${original} -> ${item.token}`);
       }
-      safeLines.push('');
       detailLines.push('');
     }
-
     const reportDir = join(homedir(), '.pii-mask-yoshi');
     mkdirSync(reportDir, { recursive: true });
     const reportPath = join(reportDir, `block-report-${s.sessionId}.txt`);
     writeFileSync(reportPath, detailLines.join('\n'), 'utf8');
 
+    if (outputFormat === 'json') {
+      const byFileJson = {};
+      for (const [file, items] of Object.entries(byFile)) {
+        byFileJson[file] = items
+          .sort((a, b) => a.line - b.line)
+          .map((item) => ({ line: item.line, category: item.category.toUpperCase(), token: item.token }));
+      }
+      const jsonResult = {
+        session_id: s.sessionId,
+        total: findings.length,
+        by_file: byFileJson,
+        detail_report: reportPath,
+      };
+      return { content: [{ type: 'text', text: JSON.stringify(jsonResult) }] };
+    }
+
+    // テキスト形式（既存動作維持）
+    const safeLines = [`[pii-mask-yoshi] ブロックレポート`, `検出総数: ${findings.length}件`, ''];
+    for (const [file, items] of Object.entries(byFile)) {
+      safeLines.push(`${file}: ${items.length}件`);
+      for (const item of items.sort((a, b) => a.line - b.line)) {
+        safeLines.push(`  L${item.line}: [${item.category}] ${item.token}`);
+      }
+      safeLines.push('');
+    }
     safeLines.push(`詳細レポート（実PII値含む）: ${reportPath}`);
     return { content: [{ type: 'text', text: safeLines.join('\n') }] };
   }
@@ -186,6 +219,32 @@ function handleMessage(msg) {
     error: { code: -32601, message: `Method not found: ${method}` },
   };
 }
+
+const STARTUP_TIME = Date.now();
+const STARTUP_ISO = new Date(STARTUP_TIME).toISOString();
+
+process.on('exit', (code) => {
+  try {
+    const store = getStore();
+    const nekoHqDir = join(homedir(), '.neko-hq');
+    mkdirSync(nekoHqDir, { recursive: true });
+    const statsPath = join(nekoHqDir, 'stats.jsonl');
+    const entry = JSON.stringify({
+      tool: 'pii-mask-yoshi',
+      command: 'session',
+      ts: STARTUP_ISO,
+      duration_ms: Date.now() - STARTUP_TIME,
+      exit_code: code,
+      meta: {
+        findings_count: store.getFindings().length,
+        masked_count: store.tokenToOriginal.size,
+      },
+    });
+    appendFileSync(statsPath, entry + '\n', 'utf8');
+  } catch {
+    // exit handler must not throw
+  }
+});
 
 const rl = createInterface({ input: process.stdin, terminal: false });
 rl.on('line', (line) => {
