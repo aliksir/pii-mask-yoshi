@@ -267,16 +267,32 @@ process.on('exit', (code) => {
     const nekoHqDir = join(homedir(), '.neko-hq');
     mkdirSync(nekoHqDir, { recursive: true });
     const statsPath = join(nekoHqDir, 'stats.jsonl');
+    const findings = store.getFindings();
+    const severities = findings.map(f => {
+      const cat = f.category || '';
+      if (/API_KEY|AWS_SECRET|AZURE_KEY|PASSWORD|JWT/.test(cat)) return 'critical';
+      if (/EMAIL|PERSON|MYNUM|PASSPORT|CREDITCARD|BANK/.test(cat)) return 'high';
+      if (/PHONE|ADDRESS|CORPORATE/.test(cat)) return 'medium';
+      return 'low';
+    });
+    const maxSeverity = severities.includes('critical') ? 'critical'
+      : severities.includes('high') ? 'high'
+      : severities.includes('medium') ? 'medium'
+      : severities.length > 0 ? 'low' : 'none';
     const entry = JSON.stringify({
       tool: 'pii-mask-yoshi',
       command: 'session',
       ts: STARTUP_ISO,
       duration_ms: Date.now() - STARTUP_TIME,
       exit_code: code,
-      meta: {
-        findings_count: store.getFindings().length,
-        masked_count: store.tokenToOriginal.size,
+      severity: maxSeverity,
+      session_id: store.sessionId,
+      summary: {
+        findings: findings.length,
+        blocked: 0,
+        masked: store.tokenToOriginal.size,
       },
+      meta: {},
     });
     appendFileSync(statsPath, entry + '\n', 'utf8');
   } catch {
