@@ -10,6 +10,15 @@ export class MaskStore {
     this.originalToToken = new Map();
     this.counters = {};
     this.sessionId = `session-${Date.now()}`;
+    this.findings = [];
+  }
+
+  addFinding(file, line, category, token) {
+    this.findings.push({ file, line, category, token });
+  }
+
+  getFindings() {
+    return this.findings;
   }
 
   getOrCreate(original, prefix) {

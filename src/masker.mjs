@@ -9,7 +9,15 @@ function ensurePatterns() {
   return patterns;
 }
 
-export function maskText(text) {
+function getLineNumber(text, charIndex) {
+  let line = 1;
+  for (let i = 0; i < charIndex && i < text.length; i++) {
+    if (text[i] === '\n') line++;
+  }
+  return line;
+}
+
+export function maskText(text, filePath = null) {
   const pats = ensurePatterns();
   let result = text;
   const replacements = [];
@@ -35,6 +43,7 @@ export function maskText(text) {
         end: m.index + matched.length,
         original: matched,
         prefix,
+        category: p.category,
       });
 
       if (m.index === p.regex.lastIndex) p.regex.lastIndex++;
@@ -63,6 +72,9 @@ export function maskText(text) {
   for (const r of deduped) {
     const token = store.getOrCreate(r.original, r.prefix);
     masked = masked.slice(0, r.start) + token + masked.slice(r.end);
+    if (filePath) {
+      store.addFinding(filePath, getLineNumber(text, r.start), r.category, token);
+    }
   }
 
   store.save();

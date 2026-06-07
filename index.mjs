@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 import { createInterface } from 'node:readline';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, dirname, extname, basename, join } from 'node:path';
+import { homedir } from 'node:os';
 import { maskText, unmaskText, getStore } from './src/masker.mjs';
 import { BINARY_EXTENSIONS, convertWithMarkitdown } from './src/converter.mjs';
 
@@ -35,6 +36,11 @@ const TOOLS = [
     description: '現セッションのマスク統計を表示する（カテゴリ別件数、対応表ファイルパス）。',
     inputSchema: { type: 'object', properties: {} },
   },
+  {
+    name: 'block_report',
+    description: 'セッション中にマスクされたPIIの一覧をカテゴリ・ファイル名・行番号で表示する。実PII値はAPI応答に含めず、ローカルレポートファイルにのみ書き出す。',
+    inputSchema: { type: 'object', properties: {} },
+  },
 ];
 
 function handleToolCall(name, args) {
@@ -56,7 +62,7 @@ function handleToolCall(name, args) {
       }
     }
 
-    const masked = maskText(content);
+    const masked = maskText(content, filePath);
     const stats = getStore().stats();
     const formatLabel = BINARY_EXTENSIONS.has(ext) ? ` [${ext} → markitdown変換]` : '';
     const header = `[pii-mask-yoshi] ${stats.totalMasked}箇所マスク済み${formatLabel} (対応表: ${stats.mapFile})\n---\n`;
@@ -104,6 +110,43 @@ function handleToolCall(name, args) {
     }
     lines.push('', `対応表: ${stats.mapFile}`);
     return { content: [{ type: 'text', text: lines.join('\n') }] };
+  }
+
+  if (name === 'block_report') {
+    const s = getStore();
+    const findings = s.getFindings();
+
+    if (findings.length === 0) {
+      return { content: [{ type: 'text', text: 'ブロック検出なし（0件）' }] };
+    }
+
+    const byFile = {};
+    for (const f of findings) {
+      (byFile[f.file] = byFile[f.file] || []).push(f);
+    }
+
+    const safeLines = [`[pii-mask-yoshi] ブロックレポート`, `検出総数: ${findings.length}件`, ''];
+    const detailLines = [`=== pii-mask-yoshi block report ===`, `Session: ${s.sessionId}`, `Date: ${new Date().toISOString()}`, ''];
+
+    for (const [file, items] of Object.entries(byFile)) {
+      safeLines.push(`${file}: ${items.length}件`);
+      detailLines.push(`File: ${file}`);
+      for (const item of items.sort((a, b) => a.line - b.line)) {
+        safeLines.push(`  L${item.line}: [${item.category}] ${item.token}`);
+        const original = s.tokenToOriginal.get(item.token) || '(unknown)';
+        detailLines.push(`  Line ${item.line}: [${item.category}] ${original} -> ${item.token}`);
+      }
+      safeLines.push('');
+      detailLines.push('');
+    }
+
+    const reportDir = join(homedir(), '.pii-mask-yoshi');
+    mkdirSync(reportDir, { recursive: true });
+    const reportPath = join(reportDir, `block-report-${s.sessionId}.txt`);
+    writeFileSync(reportPath, detailLines.join('\n'), 'utf8');
+
+    safeLines.push(`詳細レポート（実PII値含む）: ${reportPath}`);
+    return { content: [{ type: 'text', text: safeLines.join('\n') }] };
   }
 
   return { isError: true, content: [{ type: 'text', text: `不明なツール: ${name}` }] };
