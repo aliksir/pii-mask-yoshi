@@ -88,5 +88,6 @@ export class MaskStore {
     this.tokenToOriginal.clear();
     this.originalToToken.clear();
     this.counters = {};
+    this.findings.length = 0;
   }
 }

@@ -1,6 +1,7 @@
 import { describe, it, beforeEach } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { maskText, getStore } from '../src/masker.mjs';
+import { readFileSync } from 'node:fs';
 
 describe('block_report findings', () => {
   beforeEach(() => {
@@ -47,5 +48,42 @@ describe('block_report findings', () => {
       assert.ok(!f.token.includes('secret@corp.com'), 'token should not contain original value');
       assert.match(f.token, /^\[[A-Z]+-\d{3}\]$/, 'token should be in mask format');
     }
+  });
+
+  it('clear() resets findings', () => {
+    maskText('test@example.com', '/tmp/d.txt');
+    assert.ok(getStore().getFindings().length > 0);
+    getStore().clear();
+    assert.equal(getStore().getFindings().length, 0);
+  });
+});
+
+describe('block_report handler E2E', () => {
+  beforeEach(() => {
+    getStore().clear();
+  });
+
+  it('safe output contains no actual PII values', () => {
+    const testEmail = 'leak-test-42@secret-corp.example.com';
+    const testIp = '203.0.113.99';
+    maskText(`contact: ${testEmail}\nserver: ${testIp}`, '/tmp/e2e-test.txt');
+
+    const store = getStore();
+    const findings = store.getFindings();
+    const byFile = {};
+    for (const f of findings) (byFile[f.file] = byFile[f.file] || []).push(f);
+
+    const safeLines = [];
+    for (const [file, items] of Object.entries(byFile)) {
+      safeLines.push(file + ': ' + items.length + ' items');
+      for (const item of items) {
+        safeLines.push('  L' + item.line + ': [' + item.category + '] ' + item.token);
+      }
+    }
+    const output = safeLines.join('\n');
+
+    assert.ok(!output.includes(testEmail), 'output must not contain email');
+    assert.ok(!output.includes(testIp), 'output must not contain IP');
+    assert.ok(output.includes('[EMAIL-'), 'output should contain EMAIL token');
   });
 });

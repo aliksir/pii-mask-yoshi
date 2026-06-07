@@ -79,6 +79,17 @@ File ──→ safe_read ──→ [Binary?] ──→ markitdown convert ──
 6. Token-to-original mapping is saved locally at `~/.pii-mask-yoshi/maps/`
 7. `unmask_file` restores tokens to original values in a local file
 
+### block_report — PII Detection Report
+
+Returns a summary of all PII detections in the current session (category, filename, line number). **Actual PII values are never included in the API response** — they are written only to a local report file.
+
+Output to API:
+- Category, filename, line number, mask token (e.g. \[EMAIL-001\])
+- Path to the local detail report
+
+Local report (contains actual values):
+- `~/.pii-mask-yoshi/block-report-{session}.txt`
+
 ## Setup
 
 ```bash
