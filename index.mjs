@@ -7,6 +7,7 @@ import { homedir } from 'node:os';
 import { maskText, unmaskText, getStore } from './src/masker.mjs';
 import { BINARY_EXTENSIONS, convertWithMarkitdown } from './src/converter.mjs';
 import { formatSiemJsonl, formatSiemCef, formatSiemEcs } from './src/siem-formats.mjs';
+import { checkPermissions, checkRetention, cleanup as runCleanup } from './src/cleanup.mjs';
 
 const TOOLS = [
   {
@@ -36,6 +37,17 @@ const TOOLS = [
     name: 'mask_stats',
     description: '現セッションのマスク統計を表示する（カテゴリ別件数、対応表ファイルパス）。',
     inputSchema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'cleanup',
+    description: '保持期限を超過した古いtoken map・block report・SIEMファイルを一括削除する。セッション単位で対応ファイルを同時削除し、孤立ファイルを防ぐ。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        days: { type: 'number', description: '保持日数（デフォルト: 30）。この日数より古いファイルを削除対象とする' },
+        dry_run: { type: 'boolean', description: 'trueの場合、削除対象を表示するのみで実際には削除しない' },
+      },
+    },
   },
   {
     name: 'block_report',
@@ -132,6 +144,31 @@ function handleToolCall(name, args) {
       lines.push(`  ${cat}: ${count}件`);
     }
     lines.push('', `対応表: ${stats.mapFile}`);
+    return { content: [{ type: 'text', text: lines.join('\n') }] };
+  }
+
+  if (name === 'cleanup') {
+    const days = args.days || 30;
+    const dryRun = args.dry_run || false;
+
+    if (dryRun) {
+      const expired = checkRetention(days);
+      if (expired.length === 0) {
+        return { content: [{ type: 'text', text: `${days}日以上経過したファイルはありません` }] };
+      }
+      const lines = [`[dry-run] ${days}日超過: ${expired.length}件`, ''];
+      for (const e of expired) lines.push(`  ${e.path} (${e.mtime.toISOString().slice(0, 10)})`);
+      return { content: [{ type: 'text', text: lines.join('\n') }] };
+    }
+
+    const result = runCleanup(days);
+    if (result.sessionIds === 0) {
+      return { content: [{ type: 'text', text: `${days}日以上経過したファイルはありません` }] };
+    }
+    const lines = [`${result.sessionIds}セッション分のファイルを削除しました（${result.filesDeleted}ファイル）`, ''];
+    for (const d of result.details) {
+      lines.push(`  ${d.sessionId}: ${d.files.length}ファイル`);
+    }
     return { content: [{ type: 'text', text: lines.join('\n') }] };
   }
 
@@ -232,7 +269,7 @@ function handleMessage(msg) {
       result: {
         protocolVersion: '2024-11-05',
         capabilities: { tools: {} },
-        serverInfo: { name: 'pii-mask-yoshi', version: '0.3.0' },
+        serverInfo: { name: 'pii-mask-yoshi', version: '0.4.0' },
       },
     };
   }
@@ -299,6 +336,34 @@ process.on('exit', (code) => {
     // exit handler must not throw
   }
 });
+
+// CLI mode: pii-mask-yoshi --cleanup [--days N] [--dry-run]
+if (process.argv.includes('--cleanup')) {
+  const daysIdx = process.argv.indexOf('--days');
+  const days = daysIdx !== -1 ? parseInt(process.argv[daysIdx + 1], 10) || 30 : 30;
+  const dryRun = process.argv.includes('--dry-run');
+
+  if (dryRun) {
+    const expired = checkRetention(days);
+    if (expired.length === 0) { console.log(`${days}日以上経過したファイルはありません`); process.exit(0); }
+    console.log(`[dry-run] ${days}日超過: ${expired.length}件`);
+    for (const e of expired) console.log(`  ${e.path} (${e.mtime.toISOString().slice(0, 10)})`);
+    process.exit(0);
+  }
+
+  const result = runCleanup(days);
+  if (result.sessionIds === 0) { console.log(`${days}日以上経過したファイルはありません`); process.exit(0); }
+  console.log(`${result.sessionIds}セッション分のファイルを削除しました（${result.filesDeleted}ファイル）`);
+  for (const d of result.details) console.log(`  ${d.sessionId}: ${d.files.length}ファイル`);
+  process.exit(0);
+}
+
+// Startup checks (#3B: permissions, #3E: retention)
+for (const w of checkPermissions()) process.stderr.write(w + '\n');
+const expiredFiles = checkRetention();
+if (expiredFiles.length > 0) {
+  process.stderr.write(`[pii-mask-yoshi] 警告: ${expiredFiles.length}件のファイルが保持期限（30日）を超過しています。cleanup ツールで削除を検討してください。\n`);
+}
 
 const rl = createInterface({ input: process.stdin, terminal: false });
 rl.on('line', (line) => {

@@ -13,6 +13,23 @@ Claude Code (MCP) server that automatically masks PII (personally identifiable i
 | `unmask_file` | Restore masked tokens in a file to original values. Output is written to a local file only (never returned to Claude). |
 | `mask_stats` | Show masking statistics for the current session. |
 | `block_report` | PII detection report by category, file, and line number. Supports text/json/jsonl/cef/ecs formats for SIEM integration. Actual PII values are never returned — detail report is local only. |
+| `cleanup` | Delete expired token maps, block reports, and SIEM files. Deletes map+report+siem together per session to prevent orphaned files. |
+
+### CLI Mode
+
+```bash
+# Delete files older than 30 days
+pii-mask-yoshi --cleanup --days 30
+
+# Preview what would be deleted
+pii-mask-yoshi --cleanup --dry-run
+```
+
+### Startup Checks
+
+On MCP server startup, pii-mask-yoshi automatically:
+- Checks `~/.pii-mask-yoshi/` directory permissions (warns if world-readable on Unix)
+- Warns about files exceeding the 30-day retention period
 
 ## Built-in Detection Patterns
 
