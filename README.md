@@ -91,6 +91,22 @@ Output to API:
 Local report (contains actual values):
 - `~/.pii-mask-yoshi/block-report-{session}.txt`
 
+### Report Management
+
+- **Location**: `~/.pii-mask-yoshi/block-report-{session}.txt`
+- **Session ID format**: `session-{timestamp}` — a unique ID generated per MCP server instance (i.e., per Claude Code session). The timestamp is `Date.now()` at server startup.
+- **Retention**: Reports are not auto-deleted. Periodically clean old reports:
+  ```bash
+  # Delete reports older than 30 days
+  find ~/.pii-mask-yoshi -name 'block-report-*' -mtime +30 -delete
+  ```
+- **Security note**: Detail reports contain actual PII values. Ensure `~/.pii-mask-yoshi/` has appropriate permissions (e.g., `chmod 700`).
+- **Token mapping files**: `~/.pii-mask-yoshi/maps/session-*.json` — same retention policy applies. Required for `unmask_file` to work.
+
+### neko-hq Integration
+
+When pii-mask-yoshi runs as an MCP server, session summary (findings count, masked count) is automatically logged to `~/.neko-hq/stats.jsonl` on exit. This allows `neko-hq stats` to include PII detection metrics alongside other tool statistics.
+
 ## Setup
 
 ```bash

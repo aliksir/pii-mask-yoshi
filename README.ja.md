@@ -68,6 +68,22 @@ API応答に含まれる情報:
 ローカルレポート（実値を含む）:
 - `~/.pii-mask-yoshi/block-report-{session}.txt`
 
+### レポート管理
+
+- **保存場所**: `~/.pii-mask-yoshi/block-report-{session}.txt`
+- **セッションID形式**: `session-{タイムスタンプ}` — MCPサーバーインスタンスごと（= Claude Codeセッションごと）に生成される一意のID。タイムスタンプはサーバー起動時の `Date.now()`。
+- **保持期間**: レポートは自動削除されません。定期的に古いレポートを削除してください:
+  ```bash
+  # 30日以上前のレポートを削除
+  find ~/.pii-mask-yoshi -name 'block-report-*' -mtime +30 -delete
+  ```
+- **セキュリティ注意**: 詳細レポートには実際のPII値が含まれます。`~/.pii-mask-yoshi/` に適切な権限を設定してください（例: `chmod 700`）。
+- **トークン対応表**: `~/.pii-mask-yoshi/maps/session-*.json` — 同じ保持ポリシーが適用されます。`unmask_file` の動作に必要です。
+
+### neko-hq 連携
+
+pii-mask-yoshi を MCP サーバーとして使用する場合、セッション終了時に検出サマリ（検出件数、マスク件数）が `~/.neko-hq/stats.jsonl` に自動記録されます。これにより `neko-hq stats` で PII 検出メトリクスを他のツール統計と合わせて確認できます。
+
 ## セットアップ
 
 ```bash
