@@ -7,7 +7,7 @@ import { homedir } from 'node:os';
 import { maskText, unmaskText, getStore } from './src/masker.mjs';
 import { BINARY_EXTENSIONS, convertWithMarkitdown } from './src/converter.mjs';
 import { formatSiemJsonl, formatSiemCef, formatSiemEcs } from './src/siem-formats.mjs';
-import { checkPermissions, checkRetention, cleanup as runCleanup } from './src/cleanup.mjs';
+import { checkPermissions, checkRetention, cleanup as runCleanup, getRetentionDays } from './src/cleanup.mjs';
 
 // Schema v1.1 counters (module-scope)
 let blockReportCount = 0;
@@ -154,7 +154,7 @@ function handleToolCall(name, args) {
   }
 
   if (name === 'cleanup') {
-    const days = args.days || 30;
+    const days = args.days || getRetentionDays();
     const dryRun = args.dry_run || false;
 
     if (dryRun) {
@@ -351,7 +351,7 @@ process.on('exit', (code) => {
 // CLI mode: pii-mask-yoshi --cleanup [--days N] [--dry-run]
 if (process.argv.includes('--cleanup')) {
   const daysIdx = process.argv.indexOf('--days');
-  const days = daysIdx !== -1 ? parseInt(process.argv[daysIdx + 1], 10) || 30 : 30;
+  const days = daysIdx !== -1 ? parseInt(process.argv[daysIdx + 1], 10) || getRetentionDays() : getRetentionDays();
   const dryRun = process.argv.includes('--dry-run');
 
   if (dryRun) {
@@ -371,9 +371,10 @@ if (process.argv.includes('--cleanup')) {
 
 // Startup checks (#3B: permissions, #3E: retention)
 for (const w of checkPermissions()) process.stderr.write(w + '\n');
-const expiredFiles = checkRetention();
+const retDays = getRetentionDays();
+const expiredFiles = checkRetention(retDays);
 if (expiredFiles.length > 0) {
-  process.stderr.write(`[pii-mask-yoshi] 警告: ${expiredFiles.length}件のファイルが保持期限（30日）を超過しています。cleanup ツールで削除を検討してください。\n`);
+  process.stderr.write(`[pii-mask-yoshi] 警告: ${expiredFiles.length}件のファイルが保持期限を超過しています。cleanup ツールで削除を検討してください。\n`);
 }
 
 const rl = createInterface({ input: process.stdin, terminal: false });
