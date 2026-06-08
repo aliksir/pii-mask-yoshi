@@ -9,6 +9,12 @@ import { BINARY_EXTENSIONS, convertWithMarkitdown } from './src/converter.mjs';
 import { formatSiemJsonl, formatSiemCef, formatSiemEcs } from './src/siem-formats.mjs';
 import { checkPermissions, checkRetention, cleanup as runCleanup } from './src/cleanup.mjs';
 
+// Schema v1.1 counters (module-scope)
+let blockReportCount = 0;
+let cleanupExpiredCount = 0;
+
+const SEV_MAP = { critical: 'block', high: 'error', medium: 'warn', low: 'info', none: 'info' };
+
 const TOOLS = [
   {
     name: 'safe_read',
@@ -165,6 +171,7 @@ function handleToolCall(name, args) {
     if (result.sessionIds === 0) {
       return { content: [{ type: 'text', text: `${days}日以上経過したファイルはありません` }] };
     }
+    cleanupExpiredCount += result.filesDeleted;
     const lines = [`${result.sessionIds}セッション分のファイルを削除しました（${result.filesDeleted}ファイル）`, ''];
     for (const d of result.details) {
       lines.push(`  ${d.sessionId}: ${d.files.length}ファイル`);
@@ -173,6 +180,7 @@ function handleToolCall(name, args) {
   }
 
   if (name === 'block_report') {
+    blockReportCount++;
     const s = getStore();
     const findings = s.getFindings();
     const outputFormat = args.format || 'text';
@@ -317,17 +325,20 @@ process.on('exit', (code) => {
       : severities.includes('medium') ? 'medium'
       : severities.length > 0 ? 'low' : 'none';
     const entry = JSON.stringify({
+      schema_version: '1.1',
       tool: 'pii-mask-yoshi',
       command: 'session',
       ts: STARTUP_ISO,
       duration_ms: Date.now() - STARTUP_TIME,
       exit_code: code,
-      severity: maxSeverity,
+      severity: SEV_MAP[maxSeverity] || 'info',
       session_id: store.sessionId,
       summary: {
         findings: findings.length,
         blocked: 0,
         masked: store.tokenToOriginal.size,
+        reports: blockReportCount,
+        cleanup_expired: cleanupExpiredCount,
       },
       meta: {},
     });
