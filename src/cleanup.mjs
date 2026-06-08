@@ -1,4 +1,4 @@
-import { readdirSync, statSync, unlinkSync, mkdirSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, unlinkSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir, platform } from 'node:os';
 
@@ -6,6 +6,18 @@ const BASE_DIR = join(homedir(), '.pii-mask-yoshi');
 const MAPS_DIR = join(BASE_DIR, 'maps');
 const SIEM_DIR = join(BASE_DIR, 'siem');
 const DEFAULT_RETENTION_DAYS = 30;
+
+function loadRetentionPolicy() {
+  try {
+    const p = join(homedir(), '.neko-policy', 'pii-retention.json');
+    return JSON.parse(readFileSync(p, 'utf8'));
+  } catch { return null; }
+}
+
+export function getRetentionDays() {
+  const policy = loadRetentionPolicy();
+  return policy?.token_map_retention_days ?? DEFAULT_RETENTION_DAYS;
+}
 
 export function checkPermissions() {
   const warnings = [];
