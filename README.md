@@ -60,8 +60,8 @@ pii-mask-yoshi works standalone with built-in patterns. Optional dependencies ex
 
 Provides additional pattern definitions and customer-specific word lists.
 
-- **What it adds**: Patterns from `ngwords.public.json` (override built-in) + customer-specific names/terms from `ngwords.private.json`
-- **Without it**: Built-in patterns still work. Customer-specific masking is unavailable.
+- **What it adds**: Patterns from `ngwords.public.json` (override built-in) + customer-specific names/terms from `ngwords.private.json` + whitelist for false positive reduction (`ngwords-whitelist.json` + `ngwords-whitelist.local.json`)
+- **Without it**: Built-in patterns still work. Customer-specific masking and whitelist-based false positive reduction are unavailable.
 - **Config**: Set `NEKO_NOT_YOSHI_DIR` env var, or place at `C:/work/neko-not-yoshi/`
 - **Repo**: [aliksir/neko-not-yoshi](https://github.com/aliksir/neko-not-yoshi)
 
