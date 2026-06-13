@@ -1,0 +1,20 @@
+# pii-mask-yoshi publish whitelist
+# Only files matching these patterns will be synced from working dir
+.claude-plugin/plugin.json
+.codex-plugin/plugin.json
+.gitignore
+.mcp.json
+.neko-not-yoshi-allow
+LICENSE
+README.md
+README.ja.md
+docs/setup-codex.md
+docs/setup-gemini.md
+hooks/**
+index.mjs
+package.json
+scripts/**
+src/**
+test/**
+!test/*.unmasked.*
+tests/**
