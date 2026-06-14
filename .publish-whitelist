@@ -14,6 +14,3 @@ index.mjs
 package.json
 scripts/**
 src/**
-test/**
-!test/*.unmasked.*
-tests/**

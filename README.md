@@ -39,7 +39,7 @@ These patterns work without any external dependencies:
 - Japanese phone numbers
 - IPv4 addresses (private/global classification)
 - IPv6 addresses
-- Local file paths (`C:\Users\...`)
+- Local file paths (home directories, etc.)
 - API keys (OpenAI, GitHub, AWS, Anthropic)
 - AWS Secret Keys, Azure Account Keys
 - Passwords (key-value patterns, Japanese keywords, slash-separated)
@@ -62,7 +62,7 @@ Provides additional pattern definitions and customer-specific word lists.
 
 - **What it adds**: Patterns from `ngwords.public.json` (override built-in) + customer-specific names/terms from `ngwords.private.json` + whitelist for false positive reduction (`ngwords-whitelist.json` + `ngwords-whitelist.local.json`)
 - **Without it**: Built-in patterns still work. Customer-specific masking and whitelist-based false positive reduction are unavailable.
-- **Config**: Set `NEKO_NOT_YOSHI_DIR` env var, or place at `C:/work/neko-not-yoshi/`
+- **Config**: Set `NEKO_NOT_YOSHI_DIR` env var, or place at `./neko-not-yoshi/`
 - **Repo**: [aliksir/neko-not-yoshi](https://github.com/aliksir/neko-not-yoshi)
 
 ### markitdown (Python)

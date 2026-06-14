@@ -170,7 +170,7 @@ function validateJpNameList(matched) {
   if (longItems.length > items.length / 2) return null;
   const nonNameCount = items.filter(item => NON_NAME_WORDS.has(item)).length;
   if (nonNameCount >= items.length / 2) return null;
-  const instSuffix = /[藩城寺宮院塔閣橋川山湖池港駅線路号丁市区町村郡県府都道社軍職]/;
+  const instSuffix = /[藩城寺宮院塔閣橋川山湖池港駅線路号丁市区町村郡県府都道社軍職制令]/;
   const instCount = items.filter(item => instSuffix.test(item.slice(-1))).length;
   if (instCount >= items.length / 2) return null;
   return 'PERSON';
