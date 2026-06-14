@@ -1,6 +1,6 @@
 {
   "name": "pii-mask-yoshi",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "AI CLI用PIIマスキングMCPサーバー（Claude Code / Codex / Gemini対応）。機密資料を安全にAI処理するため、送信前にPIIをマスクし、結果をローカルで復元する。",
   "type": "module",
   "bin": {

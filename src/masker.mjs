@@ -4,6 +4,15 @@ import { MaskStore } from './store.mjs';
 let patterns = null;
 const store = new MaskStore();
 
+const ANTI_CONTEXT = /(?:例[)）]|サンプルデータ|テストデータ|テスト用|ダミー|\bdummy\b|\bexample\b|\bsample\s+data\b)/i;
+const emailDomainRe = /[a-zA-Z0-9._%+-]+@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
+const ANTI_CONTEXT_IDS = new Set([
+  'jp-person-name', 'jp-person-name-nospace', 'jp-person-name-list',
+  'jp-person-name-honorific', 'jp-label-name',
+  'jp-furigana-name', 'jp-katakana-name', 'jp-name-nakaguro',
+  'jp-person-name-fullspace',
+]);
+
 function ensurePatterns() {
   if (!patterns) patterns = loadPatterns();
   return patterns;
@@ -17,7 +26,7 @@ function getLineNumber(text, charIndex) {
   return line;
 }
 
-export function maskText(text, filePath = null) {
+export function maskText(text, filePath = null, options = {}) {
   const pats = ensurePatterns();
   let result = text;
   const replacements = [];
@@ -72,22 +81,41 @@ export function maskText(text, filePath = null) {
 
   deduped.sort((a, b) => b.start - a.start);
 
-  // Anti-context: サンプルデータ等の文脈にあるPIIを除外
-  const ANTI_CONTEXT = /(?:例[)）]|サンプルデータ|テストデータ|テスト用|ダミー|\bdummy\b|\bexample\b|\bsample\s+data\b)/i;
-  const ANTI_CONTEXT_IDS = new Set([
-    'jp-person-name', 'jp-person-name-nospace', 'jp-person-name-list',
-    'jp-person-name-honorific', 'jp-label-name'
-  ]);
+  const EMAIL_DOMAIN_SAFE_RANGES = [];
+  emailDomainRe.lastIndex = 0;
+  let edm;
+  while ((edm = emailDomainRe.exec(result)) !== null) {
+    if (/example/i.test(edm[1])) {
+      const domainStart = edm.index + edm[0].indexOf('@') + 1;
+      EMAIL_DOMAIN_SAFE_RANGES.push([domainStart, edm.index + edm[0].length]);
+    }
+  }
+
+  function isInEmailDomainSafeRange(pos) {
+    return EMAIL_DOMAIN_SAFE_RANGES.some(([s, e]) => pos >= s && pos < e);
+  }
 
   const filtered = deduped.filter(r => {
     if (!ANTI_CONTEXT_IDS.has(r.patternId)) return true;
     const ws = Math.max(0, r.start - 15);
     const we = Math.min(result.length, r.end + 15);
-    return !ANTI_CONTEXT.test(result.slice(ws, we));
+    const window = result.slice(ws, we);
+    if (!ANTI_CONTEXT.test(window)) return true;
+    // email ドメイン内の "example" が ANTI_CONTEXT を誤発動させている場合は除外しない（FN-34対応）
+    // window 内の "example" が safe range に完全に含まれるか確認
+    const exampleMatch = /\bexample\b/i.exec(window);
+    if (exampleMatch) {
+      const absolutePos = ws + exampleMatch.index;
+      if (isInEmailDomainSafeRange(absolutePos)) return true;
+    }
+    return false;
   });
 
+  const minConf = options.min_confidence ?? 0.0;
+  const final = minConf > 0 ? filtered.filter(r => r.confidence >= minConf) : filtered;
+
   let masked = result;
-  for (const r of filtered) {
+  for (const r of final) {
     const token = store.getOrCreate(r.original, r.prefix);
     masked = masked.slice(0, r.start) + token + masked.slice(r.end);
     if (filePath) {

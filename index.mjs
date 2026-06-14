@@ -23,6 +23,12 @@ const TOOLS = [
       type: 'object',
       properties: {
         path: { type: 'string', description: 'マスクして読み取るファイルの絶対パスまたは相対パス' },
+        min_confidence: {
+          type: 'number',
+          description: '最低確信度（0.0-1.0）。この値未満の検出はマスクしない。デフォルト0.0（全マスク）',
+          minimum: 0.0,
+          maximum: 1.0,
+        },
       },
       required: ['path'],
     },
@@ -103,7 +109,7 @@ function handleToolCall(name, args) {
       }
     }
 
-    const masked = maskText(content, filePath);
+    const masked = maskText(content, filePath, { min_confidence: args.min_confidence });
     const stats = getStore().stats();
     const formatLabel = BINARY_EXTENSIONS.has(ext) ? ` [${ext} → markitdown変換]` : '';
     const header = `[pii-mask-yoshi] ${stats.totalMasked}箇所マスク済み${formatLabel} (対応表: ${stats.mapFile})\n---\n`;
@@ -278,7 +284,7 @@ function handleMessage(msg) {
       result: {
         protocolVersion: '2024-11-05',
         capabilities: { tools: {} },
-        serverInfo: { name: 'pii-mask-yoshi', version: '0.4.0' },
+        serverInfo: { name: 'pii-mask-yoshi', version: '0.6.0' },
       },
     };
   }
