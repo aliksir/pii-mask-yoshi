@@ -46,7 +46,7 @@ describe('block_report findings', () => {
     const findings = getStore().getFindings();
     for (const f of findings) {
       assert.ok(!f.token.includes('secret@corp.com'), 'token should not contain original value');
-      assert.match(f.token, /^\[[A-Z]+-\d{3}\]$/, 'token should be in mask format');
+      assert.match(f.token, /^\[.+[A-Z]+\]$/, 'token should be in mask format');
     }
   });
 
@@ -84,7 +84,7 @@ describe('block_report handler E2E', () => {
 
     assert.ok(!output.includes(testEmail), 'output must not contain email');
     assert.ok(!output.includes(testIp), 'output must not contain IP');
-    assert.ok(output.includes('[EMAIL-'), 'output should contain EMAIL token');
+    assert.ok(output.includes('[メール'), 'output should contain EMAIL token');
   });
 });
 
@@ -214,7 +214,7 @@ describe('block_report JSON format', () => {
       assert.equal(typeof entry.line, 'number');
       assert.equal(typeof entry.category, 'string');
       assert.equal(entry.category, entry.category.toUpperCase(), 'category should be uppercase');
-      assert.match(entry.token, /^\[.+-\d{3}\]$/, 'token should be in mask format');
+      assert.match(entry.token, /^\[.+[A-Z]+\]$/, 'token should be in mask format');
     }
   });
 

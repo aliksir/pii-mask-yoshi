@@ -1,0 +1,236 @@
+{
+  "total": 13,
+  "totalChars": 4326,
+  "roundTripPass": 13,
+  "totalMasked": 35,
+  "totalSuspectedFP": 0,
+  "failures": [],
+  "fpDetails": [],
+  "allMasked": [
+    {
+      "name": "wikipedia-toyota",
+      "items": [
+        {
+          "token": "[人名A]",
+          "orig": "日野自動車",
+          "len": 5
+        },
+        {
+          "token": "[住所A]",
+          "orig": "愛知県刈谷市",
+          "len": 6
+        },
+        {
+          "token": "[住所B]",
+          "orig": "愛知県豊田市トヨタ町",
+          "len": 10
+        }
+      ]
+    },
+    {
+      "name": "wikipedia-mufg",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "東京都千代田区丸",
+          "len": 8
+        }
+      ]
+    },
+    {
+      "name": "wikipedia-diet-building",
+      "items": [
+        {
+          "token": "[人名A]",
+          "orig": "永田町二丁",
+          "len": 5
+        },
+        {
+          "token": "[人名B]",
+          "orig": "永田町一丁",
+          "len": 5
+        }
+      ]
+    },
+    {
+      "name": "wikipedia-prime-minister",
+      "items": [
+        {
+          "token": "[人名A]",
+          "orig": "永田町一丁",
+          "len": 5
+        },
+        {
+          "token": "[人名B]",
+          "orig": "赤坂二丁目",
+          "len": 5
+        },
+        {
+          "token": "[住所A]",
+          "orig": "東京都千代田区霞",
+          "len": 8
+        },
+        {
+          "token": "[人名C]",
+          "orig": "永田町二丁",
+          "len": 5
+        }
+      ]
+    },
+    {
+      "name": "ir-doc-fiction",
+      "items": [
+        {
+          "token": "[人名A]",
+          "orig": "鈴木花子",
+          "len": 4
+        },
+        {
+          "token": "[住所A]",
+          "orig": "愛知県名古屋市中村区名駅一丁目1番1号",
+          "len": 19
+        },
+        {
+          "token": "[人名B]",
+          "orig": "佐藤太郎",
+          "len": 4
+        },
+        {
+          "token": "[住所B]",
+          "orig": "東京都中央区銀座三丁目4番5号",
+          "len": 15
+        }
+      ]
+    },
+    {
+      "name": "address-like-false-positive-check",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "神奈川県横浜市港北区日吉4-1-1",
+          "len": 17
+        },
+        {
+          "token": "[人名A]",
+          "orig": "山田丘",
+          "len": 3
+        }
+      ]
+    },
+    {
+      "name": "multi-address-doc",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "北海道札幌市中央区北四条西四丁目1番1号",
+          "len": 20
+        },
+        {
+          "token": "[住所B]",
+          "orig": "宮城県仙台市青葉区一番町二丁目5番1号",
+          "len": 19
+        },
+        {
+          "token": "[住所C]",
+          "orig": "福岡県福岡市博多区博多駅前三丁目25番21",
+          "len": 21
+        },
+        {
+          "token": "[住所D]",
+          "orig": "愛知県名古屋市中区錦三丁目23番22号",
+          "len": 19
+        },
+        {
+          "token": "[住所E]",
+          "orig": "大阪府大阪市北区梅田一丁目8番17号",
+          "len": 18
+        },
+        {
+          "token": "[住所F]",
+          "orig": "東京都新宿区西新宿二丁目8番1号",
+          "len": 16
+        },
+        {
+          "token": "[人名A]",
+          "orig": "赤坂一丁目",
+          "len": 5
+        }
+      ]
+    },
+    {
+      "name": "org-name-density",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "東京都文京区本駒込二丁目28番8号",
+          "len": 17
+        },
+        {
+          "token": "[住所B]",
+          "orig": "東京都千代田区紀尾井町一丁目3番",
+          "len": 16
+        },
+        {
+          "token": "[住所C]",
+          "orig": "東京都千代田区霞",
+          "len": 8
+        },
+        {
+          "token": "[住所D]",
+          "orig": "東京都港区芝五丁目7番1号",
+          "len": 13
+        },
+        {
+          "token": "[住所E]",
+          "orig": "東京都港区東新橋一丁目5番2号",
+          "len": 15
+        },
+        {
+          "token": "[住所F]",
+          "orig": "東京都江東区豊洲三丁目3番3号",
+          "len": 15
+        }
+      ]
+    },
+    {
+      "name": "mixed-pii-no-pii",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "東京都渋谷区渋谷二丁目15番1号",
+          "len": 16
+        },
+        {
+          "token": "[住所B]",
+          "orig": "大阪府大阪市中央区本町四丁目1番1号",
+          "len": 18
+        },
+        {
+          "token": "[住所C]",
+          "orig": "宮城県仙台市青葉区本町二丁目10番37号",
+          "len": 20
+        }
+      ]
+    },
+    {
+      "name": "financial-district-text",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "東京都中央区日本橋兜町2番1号",
+          "len": 15
+        },
+        {
+          "token": "[人名A]",
+          "orig": "橋本石町二",
+          "len": 5
+        },
+        {
+          "token": "[住所B]",
+          "orig": "東京都千代田区",
+          "len": 7
+        }
+      ]
+    }
+  ]
+}

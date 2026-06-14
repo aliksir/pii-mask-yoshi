@@ -1,0 +1,541 @@
+{
+  "total": 54,
+  "totalChars": 1735,
+  "roundTripPass": 54,
+  "totalMasked": 66,
+  "totalSuspectedFP": 0,
+  "failures": [],
+  "fpDetails": [],
+  "allMasked": [
+    {
+      "name": "A-1a 渋谷区番地あり",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "東京都渋谷区神宮前1-2-3",
+          "len": 14
+        }
+      ]
+    },
+    {
+      "name": "A-1b 大阪梅田丁目",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "大阪府大阪市北区梅田1丁目",
+          "len": 13
+        }
+      ]
+    },
+    {
+      "name": "A-1c 札幌市中央区",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "北海道札幌市中央区北1条西2丁目",
+          "len": 16
+        }
+      ]
+    },
+    {
+      "name": "A-1d 名古屋市中区",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "愛知県名古屋市中区丸",
+          "len": 10
+        }
+      ]
+    },
+    {
+      "name": "A-1e 福岡市博多区",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "福岡県福岡市博多区博多駅前2-1-1",
+          "len": 18
+        }
+      ]
+    },
+    {
+      "name": "A-1f 横浜市西区",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "神奈川県横浜市西区",
+          "len": 9
+        }
+      ]
+    },
+    {
+      "name": "A-3a さいたま市",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "埼玉県さいたま市大宮区桜木町1-7-5",
+          "len": 19
+        }
+      ]
+    },
+    {
+      "name": "A-3b つくば市",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "茨城県つくば市天王台1-1-1",
+          "len": 15
+        }
+      ]
+    },
+    {
+      "name": "A-3c さいたま市南区",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "埼玉県さいたま市南区別所7-20-1",
+          "len": 18
+        }
+      ]
+    },
+    {
+      "name": "A-4a 千代田区のみ",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "東京都千代田区",
+          "len": 7
+        }
+      ]
+    },
+    {
+      "name": "A-4b 大阪中央区のみ",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "大阪府大阪市中央区",
+          "len": 9
+        }
+      ]
+    },
+    {
+      "name": "A-4c 北区のみ",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "東京都北区",
+          "len": 5
+        }
+      ]
+    },
+    {
+      "name": "A-5a 霞が関合同庁舎",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "東京都千代田区霞",
+          "len": 8
+        }
+      ]
+    },
+    {
+      "name": "A-5b 長い住所郵政省",
+      "items": [
+        {
+          "token": "[住所A]",
+          "orig": "東京都千代田区霞",
+          "len": 8
+        }
+      ]
+    },
+    {
+      "name": "B-1a 固定電話03",
+      "items": [
+        {
+          "token": "[電話A]",
+          "orig": "03-1234-5678",
+          "len": 12
+        }
+      ]
+    },
+    {
+      "name": "B-1b 携帯090",
+      "items": [
+        {
+          "token": "[電話A]",
+          "orig": "090-1111-2222",
+          "len": 13
+        }
+      ]
+    },
+    {
+      "name": "B-1d 大阪06",
+      "items": [
+        {
+          "token": "[電話A]",
+          "orig": "06-9876-5432",
+          "len": 12
+        }
+      ]
+    },
+    {
+      "name": "B-1e 080携帯",
+      "items": [
+        {
+          "token": "[電話A]",
+          "orig": "080-5555-6666",
+          "len": 13
+        }
+      ]
+    },
+    {
+      "name": "C-1a 標準メール",
+      "items": [
+        {
+          "token": "[メールA]",
+          "orig": "user@example.com",
+          "len": 16
+        }
+      ]
+    },
+    {
+      "name": "C-1b co.jpドメイン",
+      "items": [
+        {
+          "token": "[メールA]",
+          "orig": "admin@company.co.jp",
+          "len": 19
+        }
+      ]
+    },
+    {
+      "name": "C-1c プラスタグ付き",
+      "items": [
+        {
+          "token": "[メールA]",
+          "orig": "test+tag@gmail.com",
+          "len": 18
+        }
+      ]
+    },
+    {
+      "name": "C-1d gmailアドレス",
+      "items": [
+        {
+          "token": "[メールA]",
+          "orig": "taro.yamada123@gmail.com",
+          "len": 24
+        }
+      ]
+    },
+    {
+      "name": "C-1e 複数メール",
+      "items": [
+        {
+          "token": "[メールA]",
+          "orig": "bob@company.org",
+          "len": 15
+        },
+        {
+          "token": "[メールB]",
+          "orig": "alice@example.com",
+          "len": 17
+        }
+      ]
+    },
+    {
+      "name": "D-1a password:キーバリュー",
+      "items": [
+        {
+          "token": "[PWA]",
+          "orig": "password: MyPass123",
+          "len": 19
+        }
+      ]
+    },
+    {
+      "name": "D-1b token:キーバリュー",
+      "items": [
+        {
+          "token": "[PWA]",
+          "orig": "token: abc123xyz",
+          "len": 16
+        }
+      ]
+    },
+    {
+      "name": "D-1c secret=キーバリュー",
+      "items": [
+        {
+          "token": "[PWA]",
+          "orig": "secret=SuperSecret456",
+          "len": 21
+        }
+      ]
+    },
+    {
+      "name": "D-1d passwd:キーバリュー",
+      "items": [
+        {
+          "token": "[PWA]",
+          "orig": "passwd: P@ssw0rd",
+          "len": 16
+        }
+      ]
+    },
+    {
+      "name": "D-2a カンマで止まる",
+      "items": [
+        {
+          "token": "[PWA]",
+          "orig": "password: abc",
+          "len": 13
+        }
+      ]
+    },
+    {
+      "name": "D-2b セミコロンで止まる",
+      "items": [
+        {
+          "token": "[PWA]",
+          "orig": "token: xyz789",
+          "len": 13
+        }
+      ]
+    },
+    {
+      "name": "D-2c スペースで止まる",
+      "items": [
+        {
+          "token": "[PWA]",
+          "orig": "password: short",
+          "len": 15
+        }
+      ]
+    },
+    {
+      "name": "D-3c YAMLスタイル",
+      "items": [
+        {
+          "token": "[PWA]",
+          "orig": "secret: mytoken",
+          "len": 15
+        }
+      ]
+    },
+    {
+      "name": "E-1a 住所電話メール複合",
+      "items": [
+        {
+          "token": "[メールA]",
+          "orig": "info@newcorp.co.jp",
+          "len": 18
+        },
+        {
+          "token": "[電話A]",
+          "orig": "03-3344-5566",
+          "len": 12
+        },
+        {
+          "token": "[住所A]",
+          "orig": "東京都新宿区西新宿2-8-1",
+          "len": 14
+        }
+      ]
+    },
+    {
+      "name": "E-1b 大阪オフィス複合",
+      "items": [
+        {
+          "token": "[メールA]",
+          "orig": "osaka@example.co.jp",
+          "len": 19
+        },
+        {
+          "token": "[電話A]",
+          "orig": "06-1234-5678",
+          "len": 12
+        },
+        {
+          "token": "[住所A]",
+          "orig": "大阪府大阪市中央区本町3-5-7",
+          "len": 16
+        }
+      ]
+    },
+    {
+      "name": "E-2a マークダウン表",
+      "items": [
+        {
+          "token": "[メールA]",
+          "orig": "suzuki.h@corp.jp",
+          "len": 16
+        },
+        {
+          "token": "[電話A]",
+          "orig": "080-8765-4321",
+          "len": 13
+        },
+        {
+          "token": "[人名A]",
+          "orig": "鈴木花子",
+          "len": 4
+        },
+        {
+          "token": "[メールB]",
+          "orig": "sato@example.com",
+          "len": 16
+        },
+        {
+          "token": "[電話B]",
+          "orig": "090-1234-5678",
+          "len": 13
+        },
+        {
+          "token": "[人名B]",
+          "orig": "佐藤太郎",
+          "len": 4
+        }
+      ]
+    },
+    {
+      "name": "E-2b CSVスタイル",
+      "items": [
+        {
+          "token": "[メールA]",
+          "orig": "yamada@corp.co.jp",
+          "len": 17
+        },
+        {
+          "token": "[電話A]",
+          "orig": "06-3333-4444",
+          "len": 12
+        },
+        {
+          "token": "[メールB]",
+          "orig": "tanaka@example.com",
+          "len": 18
+        },
+        {
+          "token": "[電話B]",
+          "orig": "03-1111-2222",
+          "len": 12
+        },
+        {
+          "token": "[人名A]",
+          "orig": "田中一郎",
+          "len": 4
+        }
+      ]
+    },
+    {
+      "name": "E-3a 名刺風多行",
+      "items": [
+        {
+          "token": "[メールA]",
+          "orig": "sato.taro@nekokogyo.co.jp",
+          "len": 25
+        },
+        {
+          "token": "[電話A]",
+          "orig": "03-5555-6666",
+          "len": 12
+        },
+        {
+          "token": "[住所A]",
+          "orig": "東京都渋谷区代",
+          "len": 7
+        },
+        {
+          "token": "[人名A]",
+          "orig": "佐藤太郎",
+          "len": 4
+        }
+      ]
+    },
+    {
+      "name": "E-3b 英語交じり名刺",
+      "items": [
+        {
+          "token": "[メールA]",
+          "orig": "yamada.t@nekosys.jp",
+          "len": 19
+        },
+        {
+          "token": "[電話A]",
+          "orig": "03-9999-0000",
+          "len": 12
+        },
+        {
+          "token": "[住所A]",
+          "orig": "東京都港区六本木6-10-1",
+          "len": 14
+        },
+        {
+          "token": "[人名A]",
+          "orig": "山田太郎",
+          "len": 4
+        }
+      ]
+    },
+    {
+      "name": "E-4a パスワード+メール+電話",
+      "items": [
+        {
+          "token": "[電話A]",
+          "orig": "0120-000-111",
+          "len": 12
+        },
+        {
+          "token": "[PWA]",
+          "orig": "password: P@ssw0rd",
+          "len": 18
+        },
+        {
+          "token": "[メールA]",
+          "orig": "admin@secure.example.com",
+          "len": 24
+        }
+      ]
+    },
+    {
+      "name": "E-4b 住所+APIキー",
+      "items": [
+        {
+          "token": "[APIキーA]",
+          "orig": "sk-ant-abcdef1234567890ABCDEFGHIJ12345678901234567890",
+          "len": 53
+        },
+        {
+          "token": "[住所A]",
+          "orig": "北海道札幌市北区北8条西2丁目",
+          "len": 15
+        }
+      ]
+    },
+    {
+      "name": "E-4c 問い合わせフォーム風",
+      "items": [
+        {
+          "token": "[メールA]",
+          "orig": "nakamura.k@query.example.com",
+          "len": 28
+        },
+        {
+          "token": "[電話A]",
+          "orig": "092-123-4567",
+          "len": 12
+        },
+        {
+          "token": "[住所A]",
+          "orig": "福岡県福岡市博多区中洲5-3-8",
+          "len": 16
+        },
+        {
+          "token": "[人名A]",
+          "orig": "中村 健一",
+          "len": 5
+        }
+      ]
+    }
+  ]
+}

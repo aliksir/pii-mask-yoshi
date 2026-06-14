@@ -121,9 +121,8 @@ function handleToolCall(name, args) {
 
     const unmasked = unmaskText(content);
     const store = getStore();
-    const tokenPattern = /\[[A-Z]+-\d{3}\]/g;
-    const maskedTokens = content.match(tokenPattern) || [];
-    const restoredCount = maskedTokens.filter((t) => store.tokenToOriginal.has(t)).length;
+    const allTokens = [...store.tokenToOriginal.keys()];
+    const restoredCount = allTokens.filter((t) => content.includes(t)).length;
 
     let outputPath;
     if (args.output_path) {

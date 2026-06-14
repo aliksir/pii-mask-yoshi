@@ -1,0 +1,216 @@
+{
+  "total": 26,
+  "totalChars": 861,
+  "roundTripPass": 26,
+  "totalMasked": 21,
+  "totalSuspectedFP": 0,
+  "failures": [],
+  "fpDetails": [],
+  "allMasked": [
+    {
+      "name": "C-03: バージョン番号 v1.2.3.4 内の IPv4 誤検出",
+      "items": [
+        {
+          "token": "[IPv4A]",
+          "orig": "1.2.3.4",
+          "len": 7
+        }
+      ]
+    },
+    {
+      "name": "C-05: 製品コード AB1234567 がパスポート番号として誤検出",
+      "items": [
+        {
+          "token": "[パスポートA]",
+          "orig": "AB1234567",
+          "len": 9
+        }
+      ]
+    },
+    {
+      "name": "C-06: Base64 文字列が eyJ で始まり JWT として誤検出",
+      "items": [
+        {
+          "token": "[JWTA]",
+          "orig": "eyJub3RhcmVhbHRva2Vu.c29tZWJhc2U2NA",
+          "len": 35
+        }
+      ]
+    },
+    {
+      "name": "C-08: クレカ形式16桁スペース区切りとマイナンバー12桁の重複マッチ",
+      "items": [
+        {
+          "token": "[カードA]",
+          "orig": "4111 1111 1111 1111",
+          "len": 19
+        }
+      ]
+    },
+    {
+      "name": "C-09: 有効マイナンバーがクレジットカード形式に見えるケース",
+      "items": [
+        {
+          "token": "[マイナンバーA]",
+          "orig": "1234 5678 9018",
+          "len": 14
+        }
+      ]
+    },
+    {
+      "name": "C-10: 不正形式メールアドレス user.@domain.com がマッチ",
+      "items": [
+        {
+          "token": "[メールA]",
+          "orig": "user.@example.com",
+          "len": 17
+        }
+      ]
+    },
+    {
+      "name": "C-11: 連続ピリオドのメール user..name@domain.com がマッチ",
+      "items": [
+        {
+          "token": "[メールA]",
+          "orig": "user..name@example.co.jp",
+          "len": 24
+        }
+      ]
+    },
+    {
+      "name": "C-12: Hex コロン区切り文字列が IPv6 として誤検出",
+      "items": [
+        {
+          "token": "[IPv6A]",
+          "orig": "a1:b2:c3:d4:e5:f6",
+          "len": 17
+        }
+      ]
+    },
+    {
+      "name": "C-13: セマンティックバージョン 1.0.0.0 が IPv4 として誤検出",
+      "items": [
+        {
+          "token": "[IPv4A]",
+          "orig": "1.0.0.0",
+          "len": 7
+        }
+      ]
+    },
+    {
+      "name": "C-14: user / john 非パスワード文字列が PASSWD として誤検出",
+      "items": [
+        {
+          "token": "[PWA]",
+          "orig": "user / john（ユーザー名",
+          "len": 17
+        }
+      ]
+    },
+    {
+      "name": "C-15: T で始まる取引ID が法人番号として誤検出",
+      "items": [
+        {
+          "token": "[法人番号A]",
+          "orig": "T9876543210123",
+          "len": 14
+        }
+      ]
+    },
+    {
+      "name": "C-16: Luhn チェック通過のランダム16桁がクレカとして誤検出",
+      "items": [
+        {
+          "token": "[電話A]",
+          "orig": "00-0055-5555",
+          "len": 12
+        }
+      ]
+    },
+    {
+      "name": "C-17: sk-ant- キーが api-key-openai にも部分マッチする可能性の確認",
+      "items": [
+        {
+          "token": "[APIキーA]",
+          "orig": "sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890abcdef",
+          "len": 55
+        }
+      ]
+    },
+    {
+      "name": "C-18: パスポートと同形式の商品コード SK1234567",
+      "items": [
+        {
+          "token": "[パスポートA]",
+          "orig": "SK1234567",
+          "len": 9
+        }
+      ]
+    },
+    {
+      "name": "C-19: v番号なし単純バージョン 2.3.4.5 が IPv4 としてマスク",
+      "items": [
+        {
+          "token": "[IPv4A]",
+          "orig": "2.3.4.5",
+          "len": 7
+        }
+      ]
+    },
+    {
+      "name": "C-20: 電話番号とマイナンバーの数字列が隣接するケース",
+      "items": [
+        {
+          "token": "[マイナンバーA]",
+          "orig": "123456789018",
+          "len": 12
+        },
+        {
+          "token": "[電話A]",
+          "orig": "0120-1234-5678",
+          "len": 14
+        }
+      ]
+    },
+    {
+      "name": "C-21: 法人番号プレフィックスあり正規の法人番号（真陽性）",
+      "items": [
+        {
+          "token": "[法人番号A]",
+          "orig": "法人番号: 1234567890123",
+          "len": 19
+        }
+      ]
+    },
+    {
+      "name": "C-22: 日付 ISO 形式と IPv4 の混在（date-iso は business 限定）",
+      "items": [
+        {
+          "token": "[IPv4A]",
+          "orig": "203.0.113.1",
+          "len": 11
+        }
+      ]
+    },
+    {
+      "name": "C-24: 同一 IPv4 アドレスが複数回出現した場合の同一トークン割り当て",
+      "items": [
+        {
+          "token": "[IPv4A]",
+          "orig": "203.0.113.50",
+          "len": 12
+        }
+      ]
+    },
+    {
+      "name": "C-26: 本物の適格請求書番号 T1234567890123 が正しくマスクされるか（真陽性）",
+      "items": [
+        {
+          "token": "[法人番号A]",
+          "orig": "T1234567890123",
+          "len": 14
+        }
+      ]
+    }
+  ]
+}

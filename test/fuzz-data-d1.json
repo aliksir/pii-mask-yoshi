@@ -1,0 +1,26 @@
+[
+  {"name": "B1-residence-card-presentation",  "text": "在留カード番号 AB12345678CD を提示してください",                                    "expected": "mask"},
+  {"name": "B1-residence-card-immigration",   "text": "申請者の在留カード: XY98765432ZW、有効期限2028年3月",                              "expected": "mask"},
+  {"name": "B1-residence-card-renewal",       "text": "在留カード番号 CD23456789EF の更新手続きを開始します",                              "expected": "mask"},
+  {"name": "B1-alphanumeric12-no-context",    "text": "製品コード AB12345678CD を確認してください",                                       "expected": "skip"},
+
+  {"name": "B2-pension-number-check",         "text": "基礎年金番号 1234-567890 の受給資格を確認します",                                  "expected": "mask"},
+  {"name": "B2-pension-office-doc",           "text": "基礎年金番号: 9876-543210、加入期間25年",                                         "expected": "mask"},
+  {"name": "B2-pension-enrollment",           "text": "基礎年金番号 3456-789012 にて年金加入記録を照会しました",                          "expected": "mask"},
+  {"name": "B2-order-number-no-context",      "text": "注文番号 1234-567890 の配送状況をご確認ください",                                  "expected": "skip"},
+
+  {"name": "B3-license-verification",         "text": "運転免許証番号: 123456789012、有効期限2029年",                                    "expected": "mask"},
+  {"name": "B3-license-identity-check",       "text": "免許番号 987654321098 で本人確認済み",                                            "expected": "mask"},
+  {"name": "B3-license-rental-car",           "text": "運転免許証番号 456789012345 にてレンタカーのご契約を承りました",                   "expected": "mask"},
+  {"name": "B3-product-code-no-context",      "text": "商品番号 123456789012 を注文しました",                                            "expected": "skip"},
+
+  {"name": "B4-url-doc-reference",            "text": "詳細は https://www.example.com/docs/guide?lang=ja を参照してください",            "expected": "mask"},
+  {"name": "B4-url-email-signature",          "text": "ホームページ: https://company.co.jp/about",                                      "expected": "mask"},
+  {"name": "B4-url-api-endpoint",             "text": "POST https://api.example.com/v2/users/create にリクエストを送信してください",      "expected": "mask"},
+  {"name": "B4-url-multiple-mixed",           "text": "公式: https://official.example.org、ミラー: http://mirror.example.net/download", "expected": "mask"},
+  {"name": "B4-url-http-plain",               "text": "案内ページ http://info.example.jp/faq をご確認ください",                         "expected": "mask"},
+
+  {"name": "MIX-residence-address-phone",     "text": "在留カード番号 GH34567890IJ、住所: 東京都新宿区西新宿1-1-1、連絡先: 03-1234-5678", "expected": "mask"},
+  {"name": "MIX-pension-name-address",        "text": "山田 太郎 様 基礎年金番号 2345-678901 住所: 大阪府大阪市北区梅田2-2-2",           "expected": "mask"},
+  {"name": "MIX-license-address-email",       "text": "免許番号 234567890123 氏名: 佐藤 花子 連絡先: hanako@example.com",               "expected": "mask"}
+]

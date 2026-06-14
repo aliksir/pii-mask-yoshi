@@ -30,7 +30,7 @@ export function maskText(text, filePath = null) {
 
       let prefix = p.maskPrefix;
       if (p.validator) {
-        const validResult = p.validator(matched);
+        const validResult = p.validator(matched, { text: result, start: m.index, end: m.index + matched.length });
         if (validResult === null) {
           if (m.index === p.regex.lastIndex) p.regex.lastIndex++;
           continue;
@@ -44,6 +44,7 @@ export function maskText(text, filePath = null) {
         original: matched,
         prefix,
         category: p.category,
+        patternId: p.id,
       });
 
       if (m.index === p.regex.lastIndex) p.regex.lastIndex++;
@@ -68,8 +69,22 @@ export function maskText(text, filePath = null) {
 
   deduped.sort((a, b) => b.start - a.start);
 
+  // Anti-context: サンプルデータ等の文脈にあるPIIを除外
+  const ANTI_CONTEXT = /(?:例[)）]|サンプルデータ|テストデータ|テスト用|ダミー|\bdummy\b|\bexample\b|\bsample\s+data\b)/i;
+  const ANTI_CONTEXT_IDS = new Set([
+    'jp-person-name', 'jp-person-name-nospace', 'jp-person-name-list',
+    'jp-person-name-honorific', 'jp-label-name'
+  ]);
+
+  const filtered = deduped.filter(r => {
+    if (!ANTI_CONTEXT_IDS.has(r.patternId)) return true;
+    const ws = Math.max(0, r.start - 15);
+    const we = Math.min(result.length, r.end + 15);
+    return !ANTI_CONTEXT.test(result.slice(ws, we));
+  });
+
   let masked = result;
-  for (const r of deduped) {
+  for (const r of filtered) {
     const token = store.getOrCreate(r.original, r.prefix);
     masked = masked.slice(0, r.start) + token + masked.slice(r.end);
     if (filePath) {
