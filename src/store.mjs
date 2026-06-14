@@ -36,6 +36,9 @@ const PREFIX_LABELS = {
   'CRYPTO': '暗号通貨',
   'IBAN': 'IBAN',
   'JUMINCODE': '住民票コード',
+  'POSTAL': '郵便番号',
+  'COMPANY': '社名',
+  'BIRTHYEAR': '生年',
 };
 
 for (const [k, v] of Object.entries(PREFIX_LABELS)) LABEL_TO_PREFIX[v] = k;

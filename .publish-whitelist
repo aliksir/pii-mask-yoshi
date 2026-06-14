@@ -7,10 +7,14 @@
 LICENSE
 README.md
 README.ja.md
+dist/**
 docs/setup-codex.md
 docs/setup-gemini.md
 hooks/**
 index.mjs
 package.json
-scripts/**
 src/**
+# Protected: detection logic encrypted in dist/core.enc
+!src/patterns.mjs
+!src/masker.mjs
+!scripts/build-protected.mjs

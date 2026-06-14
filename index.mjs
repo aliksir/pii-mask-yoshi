@@ -1,10 +1,16 @@
 #!/usr/bin/env node
 
 import { createInterface } from 'node:readline';
-import { readFileSync, writeFileSync, mkdirSync, appendFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, appendFileSync, existsSync } from 'node:fs';
 import { resolve, dirname, extname, basename, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
-import { maskText, unmaskText, getStore } from './src/masker.mjs';
+
+const _root = dirname(fileURLToPath(import.meta.url));
+const _maskerMod = existsSync(join(_root, 'src', 'masker.mjs'))
+  ? await import('./src/masker.mjs')
+  : await import('./dist/loader.mjs');
+const { maskText, unmaskText, getStore } = _maskerMod;
 import { BINARY_EXTENSIONS, convertWithMarkitdown } from './src/converter.mjs';
 import { formatSiemJsonl, formatSiemCef, formatSiemEcs } from './src/siem-formats.mjs';
 import { checkPermissions, checkRetention, cleanup as runCleanup, getRetentionDays } from './src/cleanup.mjs';
