@@ -36,7 +36,7 @@ const EXTRA_PATTERNS = [
   { id: 'jp-person-name-nospace', category: 'pii', regex: `(?:${JP_SURNAMES_TOP200})[\\u3005\\u3400-\\u9FFF]{1,3}`, maskPrefix: 'PERSON' },
   { id: 'jp-person-name-list', category: 'pii', regex: '[\\u3005\\u3400-\\u9FFF]{1,4}(?:[、,][\\u3005\\u3400-\\u9FFF]{1,4}){2,}', maskPrefix: 'PERSON' },
   { id: 'jp-person-name-honorific', category: 'pii', regex: '[\\u3005\\u3400-\\u9FFF]{2,6}(?:さん|様|氏|殿|先生|部長|課長|社長|所長|院長|局長|室長|係長|主任)', maskPrefix: 'PERSON' },
-  { id: 'jp-label-name', category: 'pii', regex: '(?<=(?:氏名|名前|担当者?|代表者?|連絡先名?)\\s*[::\\uFF1A]\\s*)[\\u3005\\u3400-\\u9FFF]{2,6}', maskPrefix: 'PERSON' },
+  { id: 'jp-label-name', category: 'pii', regex: '(?<=(?:氏名|名前|担当者?|代表者?|連絡先名?)\\s*[::\\uFF1A]\\s*)[\\u3005\\u3400-\\u9FFF]{2,6}', maskPrefix: 'PERSON', defaultConfidence: 0.9 },
   { id: 'jp-label-address', category: 'pii', regex: '(?<=(?:住所|所在地|居住地|現住所)\\s*[::\\uFF1A]\\s*)(?:[\\u3005\\u3400-\\u9FFF\\u3040-\\u309F\\u30A0-\\u30FF0-9０-９]{2,30})', maskPrefix: 'ADDR' },
   { id: 'jp-label-phone', category: 'pii', regex: '(?<=(?:電話番号?|TEL|tel|携帯番号?|連絡先)\\s*[::\\uFF1A]\\s*)\\d[\\d-]{7,14}', maskPrefix: 'TEL' },
   { id: 'zairyu-card', category: 'pii', regex: '[A-Z]{2}\\d{8}[A-Z]{2}', maskPrefix: 'ZAIRYU' },
@@ -225,16 +225,16 @@ function compileBasePattern(p) {
 }
 
 const VALIDATORS = {
-  'credit-card': (m) => luhnCheck(m) ? 'CARD' : null,
-  'my-number': (m) => validateMyNumber(m),
-  'jp-person-name': (m) => validateJpName(m),
-  'jp-person-name-nospace': (m, ctx) => validateJpNameNospace(m, ctx),
-  'jp-person-name-list': (m) => validateJpNameList(m),
-  'jp-person-name-honorific': (m) => validateHonorific(m),
-  'basic-pension': (m, ctx) => contextContains(ctx, ['年金', '基礎年金番号']) ? 'PENSION' : null,
-  'driver-license': (m, ctx) => contextContains(ctx, ['免許', '免許証番号', '運転免許']) ? 'LICENSE' : null,
-  'iban': (m) => validateIBAN(m) ? 'IBAN' : null,
-  'jumin-code': (m, ctx) => contextContains(ctx, ['住民票コード', '住民票']) ? 'JUMINCODE' : null,
+  'credit-card': (m) => luhnCheck(m) ? { label: 'CARD', confidence: 1.0 } : null,
+  'my-number': (m) => { const r = validateMyNumber(m); return r ? { label: r, confidence: 1.0 } : null; },
+  'jp-person-name': (m) => { const r = validateJpName(m); return r ? { label: r, confidence: 0.9 } : null; },
+  'jp-person-name-nospace': (m, ctx) => { const r = validateJpNameNospace(m, ctx); return r ? { label: r, confidence: 0.7 } : null; },
+  'jp-person-name-list': (m) => { const r = validateJpNameList(m); return r ? { label: r, confidence: 0.5 } : null; },
+  'jp-person-name-honorific': (m) => { const r = validateHonorific(m); return r ? { label: r, confidence: 0.8 } : null; },
+  'basic-pension': (m, ctx) => contextContains(ctx, ['年金', '基礎年金番号']) ? { label: 'PENSION', confidence: 0.7 } : null,
+  'driver-license': (m, ctx) => contextContains(ctx, ['免許', '免許証番号', '運転免許']) ? { label: 'LICENSE', confidence: 0.5 } : null,
+  'iban': (m) => validateIBAN(m) ? { label: 'IBAN', confidence: 1.0 } : null,
+  'jumin-code': (m, ctx) => contextContains(ctx, ['住民票コード', '住民票']) ? { label: 'JUMINCODE', confidence: 0.5 } : null,
 };
 
 export function loadPatterns() {
@@ -281,6 +281,7 @@ export function loadPatterns() {
         regex: new RegExp(p.regex, 'g'),
         maskPrefix: p.maskPrefix,
         validator: VALIDATORS[p.id] || null,
+        ...(p.defaultConfidence != null && { defaultConfidence: p.defaultConfidence }),
       });
     } catch { /* skip */ }
   }

@@ -208,7 +208,8 @@ function handleToolCall(name, args) {
       detailLines.push(`File: ${file}`);
       for (const item of items.sort((a, b) => a.line - b.line)) {
         const original = s.tokenToOriginal.get(item.token) || '(unknown)';
-        detailLines.push(`  Line ${item.line}: [${item.category}] ${original} -> ${item.token}`);
+        const conf = item.confidence != null ? item.confidence : 1.0;
+        detailLines.push(`  Line ${item.line}: [${item.category}] ${original} -> ${item.token} (confidence: ${conf})`);
       }
       detailLines.push('');
     }
@@ -240,7 +241,7 @@ function handleToolCall(name, args) {
       for (const [file, items] of Object.entries(byFile)) {
         byFileJson[file] = items
           .sort((a, b) => a.line - b.line)
-          .map((item) => ({ line: item.line, category: item.category.toUpperCase(), token: item.token }));
+          .map((item) => ({ line: item.line, category: item.category.toUpperCase(), token: item.token, confidence: item.confidence ?? 1.0 }));
       }
       const jsonResult = {
         session_id: s.sessionId,
@@ -256,7 +257,8 @@ function handleToolCall(name, args) {
     for (const [file, items] of Object.entries(byFile)) {
       safeLines.push(`${file}: ${items.length}件`);
       for (const item of items.sort((a, b) => a.line - b.line)) {
-        safeLines.push(`  L${item.line}: [${item.category}] ${item.token}`);
+        const conf = item.confidence != null ? item.confidence : 1.0;
+        safeLines.push(`  L${item.line}: [${item.category}] ${item.token} (confidence: ${conf})`);
       }
       safeLines.push('');
     }

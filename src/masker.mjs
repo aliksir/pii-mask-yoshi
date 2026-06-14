@@ -29,13 +29,19 @@ export function maskText(text, filePath = null) {
       const matched = m[0];
 
       let prefix = p.maskPrefix;
+      let confidence = p.defaultConfidence ?? 1.0;
       if (p.validator) {
-        const validResult = p.validator(matched, { text: result, start: m.index, end: m.index + matched.length });
-        if (validResult === null) {
+        const v = p.validator(matched, { text: result, start: m.index, end: m.index + matched.length });
+        if (v === null) {
           if (m.index === p.regex.lastIndex) p.regex.lastIndex++;
           continue;
         }
-        prefix = validResult;
+        if (typeof v === 'string') {
+          prefix = v;
+        } else {
+          prefix = v.label;
+          confidence = v.confidence;
+        }
       }
 
       replacements.push({
@@ -45,6 +51,7 @@ export function maskText(text, filePath = null) {
         prefix,
         category: p.category,
         patternId: p.id,
+        confidence,
       });
 
       if (m.index === p.regex.lastIndex) p.regex.lastIndex++;
@@ -88,7 +95,7 @@ export function maskText(text, filePath = null) {
     const token = store.getOrCreate(r.original, r.prefix);
     masked = masked.slice(0, r.start) + token + masked.slice(r.end);
     if (filePath) {
-      store.addFinding(filePath, getLineNumber(text, r.start), r.category, token);
+      store.addFinding(filePath, getLineNumber(text, r.start), r.category, token, r.confidence);
     }
   }
 

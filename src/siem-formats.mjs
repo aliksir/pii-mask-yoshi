@@ -40,6 +40,7 @@ export function formatSiemJsonl(findings, sessionId, meta) {
     category: f.category,
     token: f.token,
     severity: getSeverity(f.category),
+    confidence: f.confidence ?? 1.0,
     ...safeMeta,
   })).join('\n') + '\n';
 }
@@ -53,7 +54,7 @@ export function formatSiemCef(findings, sessionId, meta) {
     const sev = CEF_SEVERITY[getSeverity(f.category)] || 5;
     return `CEF:0|aliksir|pii-mask-yoshi|${PII_VERSION}|pii_detection|PII Detected|${sev}|` +
       `src=${escapeCef(f.file)} spt=${f.line} cs1=${escapeCef(f.category)} cs1Label=Category cs2=${escapeCef(f.token)} cs2Label=Token ` +
-      `dvchost=${escapeCef(host)} externalId=${escapeCef(sessionId)}${orgPart}${envPart}`;
+      `dvchost=${escapeCef(host)} externalId=${escapeCef(sessionId)} confidence=${f.confidence ?? 1.0}${orgPart}${envPart}`;
   }).join('\n') + '\n';
 }
 
@@ -72,7 +73,7 @@ export function formatSiemEcs(findings, sessionId, meta) {
     },
     file: { path: f.file },
     source: { line: f.line },
-    rule: { category: f.category },
+    rule: { category: f.category, confidence: f.confidence ?? 1.0 },
     message: f.token,
     agent: { name: 'pii-mask-yoshi', version: PII_VERSION },
     host: { name: host },

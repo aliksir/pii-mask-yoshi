@@ -59,8 +59,8 @@ export class MaskStore {
     this.findings = [];
   }
 
-  addFinding(file, line, category, token) {
-    this.findings.push({ file, line, category, token });
+  addFinding(file, line, category, token, confidence = 1.0) {
+    this.findings.push({ file, line, category, token, confidence });
   }
 
   getFindings() {
