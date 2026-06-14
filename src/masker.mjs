@@ -36,12 +36,8 @@ export function maskText(text, filePath = null) {
           if (m.index === p.regex.lastIndex) p.regex.lastIndex++;
           continue;
         }
-        if (typeof v === 'string') {
-          prefix = v;
-        } else {
-          prefix = v.label;
-          confidence = v.confidence;
-        }
+        prefix = v.label;
+        confidence = v.confidence;
       }
 
       replacements.push({

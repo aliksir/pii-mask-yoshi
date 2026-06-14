@@ -219,8 +219,8 @@ function compileBasePattern(p) {
     validator: p.id === 'ipv4' ? (m) => {
       const cls = classifyIPv4(m);
       if (cls === 'invalid') return null;
-      return cls === 'private' ? 'PRIV-IPv4' : 'IPv4';
-    } : p.id === 'ipv6' ? (m) => looksLikeIPv6(m) ? 'IPv6' : null : null,
+      return { label: cls === 'private' ? 'PRIV-IPv4' : 'IPv4', confidence: 1.0 };
+    } : p.id === 'ipv6' ? (m) => looksLikeIPv6(m) ? { label: 'IPv6', confidence: 1.0 } : null : null,
   };
 }
 
