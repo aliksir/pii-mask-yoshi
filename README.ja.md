@@ -1,0 +1,361 @@
+> English version: [README.md](README.md)
+> [neko-HQ](https://github.com/aliksir/neko-hq) エコシステムの一部です。
+
+# pii-mask-yoshi（日本語ドキュメント）
+
+AI CLI 用 MCP サーバー（**Claude Code** / **OpenAI Codex CLI** / **Google Gemini CLI** 対応）。ファイル内の PII（個人情報・機密情報）を自動マスクし、外部 AI サーバーに生データを送信せずに AI 処理を行う。マスクされた内容のみが送信され、元の値はローカルの対応表ファイルで復元できる。
+
+## なぜ必要か
+
+AI CLI ツール（Claude Code, Codex, Gemini 等）は読み取ったファイル内容を外部 API に送信する。顧客情報・社内機密を含むファイルをそのまま読ませると、API 経由で外部に流出するリスクがある。pii-mask-yoshi は通常のファイル読み取りの代わりに `safe_read` を提供し、送信前に PII をトークンに置換することでこの問題を解決する。
+
+## ツール一覧
+
+| ツール | 説明 |
+|--------|------|
+| `safe_read` | ファイルを読み取り、PII を自動マスクして返す。バイナリ（xlsx, docx, pptx, pdf 等）は markitdown 経由で自動変換。 |
+| `unmask_file` | マスクトークンを含むファイルを元の値に復元し、ローカルファイルに保存する。復元データは AI コンテキストに返さない。 |
+| `mask_stats` | 現在セッションのマスキング統計を表示する。 |
+| `block_report` | PII検出レポート（カテゴリ・ファイル名・行番号）。text/json/jsonl/cef/ecs形式に対応しSIEM連携可能。実PII値はAPI応答に含めず、詳細はローカルレポートのみ。 |
+| `cleanup` | 保持期限超過のtoken map・block report・SIEMファイルを一括削除。セッション単位で同時削除（孤立ファイル防止）。 |
+
+### CLIモード
+
+```bash
+pii-mask-yoshi --cleanup --days 30      # 30日超過ファイル削除
+pii-mask-yoshi --cleanup --dry-run      # プレビューのみ
+```
+
+### 起動時チェック
+
+MCP サーバー起動時に `~/.pii-mask-yoshi/` のパーミッション警告と保持期限超過ファイルの警告を自動実行。
+
+## 検出パターン（内蔵）
+
+外部依存なしで動作するパターン：
+
+- メールアドレス
+- 日本の電話番号（固定・携帯・フリーダイヤル）
+- IPv4 アドレス（プライベート/グローバル分類）
+- IPv6 アドレス
+- ローカルファイルパス（ホームディレクトリ等）
+- API キー（OpenAI, GitHub, AWS, Anthropic）
+- AWS シークレットキー、Azure アカウントキー
+- パスワード（key=value 形式、日本語キーワード、スラッシュ区切り）
+- クレジットカード番号（Luhn チェック付き）
+- 日本の住所（都道府県 + 市区町村）
+- マイナンバー
+- 銀行口座番号
+- パスポート番号（日本形式）
+- 法人番号
+- 日本人名（姓 + スペース + 名）
+- 読点区切りの人名リスト
+
+## アーキテクチャ
+
+### Rust/WASM エンジン
+
+検出処理は Rust でコンパイルした WASM モジュールで実行される。
+
+- 66個の検出パターン全てが WASM 内で処理される
+- パターン定義は XOR 難読化済み（ソースコードに平文 regex なし）
+- PERSON パターン（11個）は overlap scan に対応 — バリデーター棄却後に同一位置での再マッチを検出する
+- JS バリデーター（人名の false positive 抑制等）は WASM のマッチ結果に対して後処理として適用される
+- WASM が利用できない環境では JS regex フォールバックが自動的に動作する
+
+## 暗号化（保存時保護）
+
+トークン対応表（`~/.pii-mask-yoshi/maps/*.json`）には元のPII値が含まれる。追加のセキュリティとして、AES-256-GCM で保存時暗号化できる。
+
+### 暗号化の有効化
+
+鍵が利用可能なら**自動的に**暗号化される。設定フラグは不要。
+
+**方法1: 鍵ファイル**（推奨）
+```bash
+# 鍵を生成（~/.pii-mask-yoshi/.key に保存）
+node -e "import('./src/crypto.mjs').then(c => c.generateKey())"
+```
+
+**方法2: 環境変数**
+```bash
+# Base64エンコードされた256ビット鍵を設定
+export PII_MASK_ENCRYPT_KEY="<base64-encoded-key>"
+```
+
+### 動作の仕組み
+
+- **保存時**（`safe_read` / セッション終了時）: 鍵がある場合、トークン対応表は暗号化してディスクに書き込まれる
+- **読み込み時**（`unmask_file`）: 暗号化された対応表はメモリ上で透過的に復号される
+- **鍵なし**: 対応表は従来通り平文JSONで保存（後方互換）
+- **混在モード**: `load()` は暗号化/平文を自動判別。暗号化有効化後も古い平文対応表は読める
+
+### 鍵の解決順序
+
+| 優先度 | ソース | 詳細 |
+|--------|--------|------|
+| 1 | `PII_MASK_ENCRYPT_KEY` 環境変数 | Base64エンコードされた256ビット生鍵 |
+| 2 | `~/.pii-mask-yoshi/.key` ファイル | `generateKey()` で生成 |
+
+### セキュリティに関する注意
+
+- 鍵ファイルは制限付き権限（`0o600`）で作成される
+- AES-256-GCM は機密性と完全性の両方を保証（改ざんされたファイルは拒否される）
+- 暗号化のたびにランダムな IV を使用するため、同じデータでも異なる暗号文になる
+- **鍵自体の保護が必要** — 鍵があれば全ての対応表を復号できる
+## 動作の流れ
+
+```
+ファイル → safe_read → [バイナリ?] → markitdown 変換 → WASM パターンマッチ → JS バリデーター → マスク済みテキスト → API
+                            │                                  ↑ ↓（WASM 利用不可時）
+                            └→ [テキスト] → ファイル読込 ──────┘ JS regex フォールバック
+                                                                              │
+                                                                    対応表を保存
+                                                                    ~/.pii-mask-yoshi/maps/
+```
+
+1. `safe_read` がローカルでファイルを読み取る
+2. バイナリファイルは `python -m markitdown` で Markdown に変換
+3. WASM エンジン（Rust コンパイル済み）が全パターンを適用する。WASM 利用不可時は JS regex フォールバックが動作する
+4. JS バリデーターが WASM マッチ結果を後処理（人名 false positive 抑制等）
+5. マッチした値をトークン（`[EMAIL-001]`, `[PRIV-IPv4-003]`, `[PERSON-002]` 等）に置換
+6. マスク済みテキストのみが AI に返される（= 外部 API に送信される）
+7. トークンと元の値の対応表はローカル（`~/.pii-mask-yoshi/maps/`）に保存
+8. `unmask_file` でトークンを元の値に復元（結果はローカルファイルにのみ出力）
+
+### block_report — PII検出レポート
+
+現セッションで検出された全PIIのサマリを返す（カテゴリ・ファイル名・行番号）。**実PII値はAPI応答に含まれない**。実値はローカルレポートファイルにのみ書き出される。
+
+API応答に含まれる情報:
+- カテゴリ、ファイル名、行番号、マスクトークン（例: \[EMAIL-001\]）
+- ローカル詳細レポートのパス
+
+ローカルレポート（実値を含む）:
+- `~/.pii-mask-yoshi/block-report-{session}.txt`
+
+### レポート管理
+
+- **保存場所**: `~/.pii-mask-yoshi/block-report-{session}.txt`
+- **セッションID形式**: `session-{タイムスタンプ}` — MCPサーバーインスタンスごと（= AI CLIセッションごと）に生成される一意のID。タイムスタンプはサーバー起動時の `Date.now()`。
+- **保持期間**: レポートは自動削除されません。定期的に古いレポートを削除してください:
+  ```bash
+  # 30日以上前のレポートを削除（Linux/macOS）
+  find ~/.pii-mask-yoshi -name 'block-report-*' -mtime +30 -delete
+  ```
+  ```powershell
+  # 30日以上前のレポートを削除（Windows PowerShell）
+  Get-ChildItem "$env:USERPROFILE\.pii-mask-yoshi" -Filter "block-report-*" |
+    Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-30) } | Remove-Item
+  ```
+- **セキュリティ注意**: 詳細レポートには実際のPII値が含まれます。`~/.pii-mask-yoshi/` に適切な権限を設定してください（例: Linux/macOS では `chmod 700`、Windows では ACL で制限）。
+- **トークン対応表**: `~/.pii-mask-yoshi/maps/session-*.json` — 同じ保持ポリシーが適用されます。`unmask_file` の動作に必要です。
+
+### SIEM 連携
+
+`block_report` は複数の出力形式に対応しており、SIEM やログ管理システムに直接取り込めます:
+
+| 形式 | 用途 | 出力先 |
+|------|------|--------|
+| `text` | 人間可読（デフォルト） | MCP応答 |
+| `json` | 集約JSON | MCP応答 |
+| `jsonl` | 1検出1行（Splunk, Datadog, 汎用） | ファイル |
+| `cef` | Common Event Format（ArcSight, QRadar） | ファイル |
+| `ecs` | Elastic Common Schema（Elasticsearch, Kibana） | ファイル |
+
+SIEM形式（`jsonl`, `cef`, `ecs`）は `~/.pii-mask-yoshi/siem/{session}.{format}` に出力されます。`output_path` で変更可能。
+
+カスタムメタデータを `meta` パラメータで各イベントに付与できます:
+```json
+{"format": "jsonl", "meta": {"org": "acme-corp", "environment": "prod"}}
+```
+
+重要度はPIIカテゴリ別に自動付与: `critical`（APIキー、パスワード）、`high`（メール、人名、クレジットカード）、`medium`（電話番号、住所）、`low`（IP、ファイルパス）。
+
+**SIEM出力にPII実値は一切含まれません** — カテゴリ、トークン、ファイルパス、行番号のみ。
+
+#### 出力例
+
+**JSONL**（1検出1行）:
+```json
+{"timestamp":"2026-06-07T10:00:00.000Z","event_type":"pii_detection","session_id":"session-1749290400000","host":"workstation-1","file":"/projects/report.txt","line":3,"category":"EMAIL","token":"[EMAIL-001]","severity":"high","org":"acme-corp"}
+```
+
+**CEF**:
+```
+CEF:0|aliksir|pii-mask-yoshi|0.6.0|pii_detection|PII Detected|7|src=/projects/report.txt spt=3 cs1=EMAIL cs1Label=Category cs2=[EMAIL-001] cs2Label=Token dvchost=workstation-1 externalId=session-1749290400000 org=acme-corp
+```
+
+**ECS**（Elastic Common Schema）:
+```json
+{"@timestamp":"2026-06-07T10:00:00.000Z","event":{"kind":"alert","category":["intrusion_detection"],"type":["info"],"module":"pii-mask-yoshi","dataset":"pii.detection","severity":7},"file":{"path":"/projects/report.txt"},"source":{"line":3},"rule":{"category":"EMAIL"},"message":"[EMAIL-001]","agent":{"name":"pii-mask-yoshi","version":"0.6.0"},"host":{"name":"workstation-1"},"labels":{"session_id":"session-1749290400000","org":"acme-corp"}}
+```
+
+### neko-hq 連携
+
+pii-mask-yoshi を MCP サーバーとして使用する場合、セッション終了時に検出サマリ（検出件数、マスク件数）が `~/.neko-hq/stats.jsonl` に自動記録されます。これにより `neko-hq stats` で PII 検出メトリクスを他のツール統計と合わせて確認できます。
+
+## AI クライアント別保護レベル
+
+| クライアント | MCP 対応 | 通常読取の遮断 | 保護レベル | 備考 |
+|------------|:--------:|:-------------:|:----------:|------|
+| Claude Code | Yes | 強制 | **強** | `pii-read-guard` hook が素の `Read` をブロック。`safe_read` のみ通過。 |
+| OpenAI Codex CLI | Yes | 規約依存 | 中 | hook 機構なし。ユーザーが `safe_read` を使う運用に依存。 |
+| Google Gemini CLI | Yes | 規約依存 | 中 | hook 機構なし。Codex と同じ規約ベース。 |
+
+> Claude Code は PreToolUse hook で `Read` 呼び出しを検知し、機密ファイルへのアクセスを `safe_read` に強制転送する。Codex / Gemini にはこの hook 機構がないため、システムプロンプトで「ファイル読み取りは常に `safe_read` を使う」と指定することで保護レベルを引き上げられる。
+
+## セットアップ
+
+```bash
+# インストール（Node.js 22 以上が必要）
+npm install -g pii-mask-yoshi
+
+# オプション: バイナリファイル対応
+pip install markitdown[all]
+```
+
+### Claude Code
+
+プロジェクトの `.mcp.json` に追加:
+
+```json
+{
+  "mcpServers": {
+    "pii-mask-yoshi": {
+      "command": "pii-mask-yoshi"
+    }
+  }
+}
+```
+
+`pii-read-guard` hook（`.claude-plugin/` に同梱）で、機密ファイルへの素の `Read` をブロック可能。
+
+### OpenAI Codex CLI
+
+プロジェクトの `.codex/.mcp.json` に追加:
+
+```json
+{
+  "mcpServers": {
+    "pii-mask-yoshi": {
+      "command": "pii-mask-yoshi"
+    }
+  }
+}
+```
+
+詳細: [docs/setup-codex.md](docs/setup-codex.md)
+
+### Google Gemini CLI
+
+Gemini の MCP 設定に追加:
+
+```json
+{
+  "mcpServers": {
+    "pii-mask-yoshi": {
+      "command": "pii-mask-yoshi"
+    }
+  }
+}
+```
+
+詳細: [docs/setup-gemini.md](docs/setup-gemini.md)
+
+> **注意**: `pii-read-guard` PreToolUse hook は Claude Code 専用です。Codex / Gemini では機密ファイルに対して `safe_read` を直接使用してください。
+
+## オプション依存
+
+pii-mask-yoshi は単体で動作する。以下のオプション依存で機能を拡張できる。
+
+### neko-not-yoshi（推奨）
+
+追加パターン定義と顧客固有のワードリストを提供する。
+
+- **追加される機能**: `ngwords.public.json` のパターン（内蔵を上書き）+ `ngwords.private.json` の顧客固有名称 + ホワイトリストによる false positive 削減（`ngwords-whitelist.json` + `ngwords-whitelist.local.json`）
+- **なくても動く**: 内蔵パターンは動作する。顧客固有のマスキングとホワイトリストベースの false positive 削減は使えない
+- **設定**: 環境変数 `NEKO_NOT_YOSHI_DIR` を設定、または `./neko-not-yoshi/` に配置
+- **リポジトリ**: [aliksir/neko-not-yoshi](https://github.com/aliksir/neko-not-yoshi)
+
+### markitdown（Python）
+
+`safe_read` でバイナリファイルを処理するために必要。
+
+- **追加される機能**: xlsx, docx, pptx, pdf, odt, ods, odp, rtf をテキストに変換してからマスキング
+- **なくても動く**: バイナリファイルはエラーになる。テキストファイルは正常動作
+- **インストール**: `pip install markitdown[all]`
+
+### markitdown-yoshi（MCP サーバー）
+
+ドキュメント変換の単体 MCP サーバー。pii-mask-yoshi は内蔵バイナリ変換に `python -m markitdown` を直接呼ぶが、markitdown-yoshi は独立した MCP ツールとして追加機能を提供する:
+
+- **追加される機能**: `convert`（オンデマンドファイル変換）、`classify_pdf`（PDF 構造分析）、`supported_formats`（対応形式一覧）
+- **併用**: pii-mask-yoshi は読み取り時の PII マスク、markitdown-yoshi は単体変換。両方を MCP サーバーとして同時に動かせる
+- **セキュリティ**: markitdown-yoshi はディレクトリスコープのアクセス制御を強制（ファイルシステムルートへのアクセス禁止）
+- **インストール**: `npm install -g markitdown-yoshi`
+- **リポジトリ**: [aliksir/markitdown-yoshi](https://github.com/aliksir/markitdown-yoshi)
+
+### 変換フロー: 役割分担
+
+```
+              ドキュメントファイル (xlsx, docx, pdf, ...)
+                          |
+          +---------------+---------------+
+          |                               |
+    pii-mask-yoshi                  markitdown-yoshi
+    (safe_read ツール)              (convert ツール)
+          |                               |
+    python -m markitdown            python -m markitdown
+    (内部呼び出し)                  (内部呼び出し)
+          |                               |
+    PII マスク適用                  生の Markdown を返却
+          |                               |
+    マスク済みテキスト -> API        Markdown -> API
+          |
+    トークン対応表をローカル保存
+    (~/.pii-mask-yoshi/maps/)
+```
+
+| 観点 | pii-mask-yoshi | markitdown-yoshi |
+|------|---------------|-----------------|
+| 目的 | PII マスク付きファイル読み取り | ドキュメントの Markdown 変換 |
+| PII 処理 | API 送信前に自動マスク | マスクなし（生データ） |
+| バイナリ変換 | `python -m markitdown` 内蔵 | `python -m markitdown` 内蔵 |
+| アクセス制御 | ディレクトリ制限なし | 許可ルート制限あり |
+| サイズ制限 | なし（ファイルシステム準拠） | 入力 10MB、出力 500KB |
+| キャッシュ | セッション単位のトークン対応表 | なし |
+| 使い分け | 機密文書の読み取り | 一般的なドキュメント変換 |
+
+## 免責事項
+
+本ツールは PII 漏洩リスクを低減しますが、完全な検出を保証するものではありません。パターンベースのマスキングには以下の制約があります。
+
+- 未知・特殊な形式の PII は検出できない場合がある
+- 文脈依存の情報（一般語と同一の人名等）は見落とし・過検出の可能性がある
+- バイナリファイルの変換精度は markitdown に依存する
+- カスタムワードリスト（neko-not-yoshi）は手動メンテナンスが必要
+
+**本ツールを唯一の PII 保護手段として使用しないでください。** 機密文書を扱う際はマスク結果を必ず確認し、多層防御の一環として利用してください。
+
+検出漏れにより発生した損害について、作者は一切の責任を負いません。
+
+## リポジトリとビルド
+
+このリポジトリは**クリーンルーム公開スナップショット**です。内部開発履歴から機密情報を除去し、公開可能な状態に再構成しています。
+
+- Git 履歴には完全な開発タイムラインが含まれません
+- 各公開リリースは orphan commit です（前リリースへの親チェーンなし）
+- バージョン間の変更詳細は [CHANGELOG.md](CHANGELOG.md) を参照
+
+### Protected Build
+
+`dist/` ディレクトリには `scripts/build-protected.mjs`（AES-256-GCM）で暗号化されたバンドルが含まれます。これはオプションの強化版配布物で、`src/` の非暗号化ソースが主要コードベースです。
+
+`src/encoded-data.mjs` のパターン定義は XOR 難読化されています（暗号化ではありません）。grep での平文パターン検出を防ぎますが、暗号学的保護ではありません。詳細は [THREAT-MODEL.md](THREAT-MODEL.md) を参照。
+
+鍵管理ロードマップ（XOR → AES-GCM → KMS 連携）は [docs/KEY-MANAGEMENT.md](docs/KEY-MANAGEMENT.md) を参照。
+
+## ライセンス
+
+Apache-2.0

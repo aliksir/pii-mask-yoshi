@@ -1,0 +1,13 @@
+{
+  "name": "pii-mask-yoshi",
+  "version": "0.6.0",
+  "description": "Automatically masks PII (personally identifiable information) in files before they reach external AI API servers. Provides safe_read as a drop-in replacement for file reading, with token mapping for local restoration.",
+  "author": {
+    "name": "aliksir",
+    "url": "https://github.com/aliksir"
+  },
+  "homepage": "https://github.com/aliksir/pii-mask-yoshi#readme",
+  "repository": "https://github.com/aliksir/pii-mask-yoshi",
+  "license": "Apache-2.0",
+  "keywords": ["claude", "claude-code", "pii", "privacy", "masking", "security", "mcp"]
+}
