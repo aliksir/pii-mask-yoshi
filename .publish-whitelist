@@ -1,0 +1,33 @@
+# pii-mask-yoshi publish whitelist
+# Only files matching these patterns will be synced from working dir
+.claude-plugin/plugin.json
+.codex-plugin/plugin.json
+.gitignore
+.mcp.json
+LICENSE
+README.md
+README.ja.md
+dist/**
+docs/setup-codex.md
+docs/setup-gemini.md
+# hooks/ is local-only (pii-read-guard.mjs references local paths)
+index.mjs
+package.json
+src/**
+!src/wasm-loader.mjs
+# Rust/WASM engine (Phase 2: regex obfuscated, safe to publish)
+rust/Cargo.toml
+rust/src/lib.rs
+rust/src/generated_patterns.rs
+rust/pkg/**
+!rust/pkg/.gitignore
+# Build scripts
+scripts/codegen-patterns.mjs
+scripts/encode-js-patterns.mjs
+scripts/build-protected.mjs
+# Documentation
+THREAT-MODEL.md
+CHANGELOG.md
+docs/KEY-MANAGEMENT.md
+# E2E test suite (public)
+test/e2e.test.mjs
