@@ -1,0 +1,11 @@
+{
+  "name": "pii-engine",
+  "version": "0.1.0",
+  "files": [
+    "pii_engine_bg.wasm",
+    "pii_engine.js",
+    "pii_engine.d.ts"
+  ],
+  "main": "pii_engine.js",
+  "types": "pii_engine.d.ts"
+}

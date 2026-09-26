@@ -1,0 +1,32 @@
+# pii-mask-yoshi publish whitelist
+# Only files matching these patterns will be synced from working dir
+.claude-plugin/plugin.json
+.codex-plugin/plugin.json
+.gitignore
+.mcp.json
+LICENSE
+README.md
+README.ja.md
+docs/setup-codex.md
+docs/setup-gemini.md
+# hooks/ is local-only (pii-read-guard.mjs references local paths)
+index.mjs
+package.json
+src/**
+!src/wasm-loader.mjs
+# パターン定義（XOR 難読化のみ）は非公開。パターンは WASM 内（AES）にだけ置く
+!src/encoded-data.mjs
+# Rust/WASM engine
+# generated_patterns.rs は暗号文と鍵導出の seed/salt を同じファイルに持ち容易に復号できるため非公開
+rust/Cargo.toml
+rust/src/lib.rs
+rust/pkg/**
+!rust/pkg/.gitignore
+# Build scripts（平文パターン・鍵材料を含まないものだけ。encode-js-patterns.mjs は非公開パターンの保守用なので除外）
+scripts/codegen-patterns.mjs
+# Documentation
+THREAT-MODEL.md
+CHANGELOG.md
+docs/KEY-MANAGEMENT.md
+# E2E test suite (public)
+test/e2e.test.mjs
